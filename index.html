@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tableau DeepDive</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+
+  <!-- JSZip v3.10.1 - A JavaScript class for generating and reading zip files -->
+  <script src="https://cdn.jsdelivr.net/gh/Stuk/jszip@master/dist/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+  <!-- <script type="module" src="script.js"></script> -->
+
+  <script  src="./script.js" defer></script>
+</head>
+
+<body>
+  <section class="section" id="app">
+    <div class="container">
+      <h1 class="title has-text-centered">Tableau DeepDive🌊🔎 </h1>
+      <!-- <h3 class="title has-text-centered"> Data Exploration Made Easy! </h3> -->
+
+      <p class="subtitle has-text-centered">
+        Upload your Tableau workbook and explore the connections between data sources, sheets, and calculations!
+      </p>
+      <div style="padding-top: 10px; text-align: center;">
+        <!-- <p style="font-size: 16px; color: #333;">
+          If you think this is awesome, just toss a 'thanks' my way! It's my favorite word right now! 😎
+        </p> -->
+        
+        <!-- <a href="mailto:ravindra.punekar@cotiviti.com?subject=Thanks%20for%20Being%20Awesome!%20😎" style="text-decoration: none; color: #0078d4; font-weight: bold;">
+          ✉️
+        </a> -->
+      </div>
+      <div class="block" v-cloak>
+        <div class="file has-name is-fullwidth">
+          <label class="file-label">
+            <input class="file-input" type="file" accept=".twb,.twbx" @change="processFile($event)" />
+            <span class="file-cta">
+              <span class="file-label">Select a .twb or .twbx</span>
+            </span>
+            <span class="file-name">{{fileName}}</span>
+          </label>
+        </div>
+        <p class="error">{{errorMessage}}</p>
+      </div>
+      <div class="mb-1" v-if="sheetMap.length > 0 || fieldMap.length > 0">
+        <div class="tabs is-boxed sticky-tabs">
+          <ul>
+          </li>
+          <li :class="currentTab === 6 ? 'is-active' : ''">
+            <a @click="currentTab = 6">
+              <span>Worksheets & Dashboards</span>
+            </a>
+          </li> 
+          
+            <li :class="currentTab === 1 ? 'is-active' : ''">
+              <a @click="currentTab = 1">
+                <span>DataSource -> Sheets</span>
+              </a>
+            </li>
+            <li :class="currentTab === 2 ? 'is-active' : ''">
+              <a @click="currentTab = 2">
+                <span>Sheet -> Datasources</span>
+              </a>
+            </li>
+            <li :class="currentTab === 3 ? 'is-active' : ''">
+              <a @click="currentTab = 3">
+                <span>Fields -> Sheets</span>
+              </a>
+            </li>
+            <li :class="currentTab === 4 ? 'is-active' : ''">
+              <a @click="currentTab = 4">
+                <span>Datasource Field Names</span>
+              </a>
+            </li>
+            <li :class="currentTab === 5 ? 'is-active' : ''">
+              <a @click="currentTab = 5">
+                <span>Calculated Field Calculations</span>
+              </a>
+            <li :class="currentTab === 7 ? 'is-active' : ''">
+              <a @click="currentTab = 7">
+                <span>Calculated Fields Dependencies</span>
+              </a>
+            </li> 
+            
+            <li :class="currentTab === 8 ? 'is-active' : ''">
+              <a @click="currentTab = 8">
+                <span>Unused Fields</span>
+              </a>
+            </li> 
+            
+          </ul>
+        </div>
+      </div>
+
+      <!-- <div v-if="currentTab===0" v-cloak>
+        <img src="I:\Employee\Ravindra Punekar\T DeepDive\logo2.jpg" alt="New Image" class="image-class">
+
+        <p class="tab-description">Made by Ravindra</p>
+        <p class="tab-description">New features Coming Soon...</p>
+      </div> -->
+      <div v-if="currentTab === 0" v-cloak class="tab0_container">
+        <p class="tab-description">Made by Ravindra</p>
+        <p class="tab-description">New features Coming Soon...</p>
+        <img :src="logos[currentLogoIndex]" alt="Logo" class="image-class">
+        <p style="font-size: 16px; color: #333;">
+          Kaam aasan ho gaya..?, ab chai ka intezaar hai! ☕😉
+        </p>
+      </div>
+      
+      <div class="card" v-if="currentTab===8" v-cloak>
+        
+        
+      </div>
+
+          <div class="card" v-if="currentTab===1" v-cloak>
+        <p class="tab-description">This tab shows which sheets are connected to which data sources in your Tableau
+          workbook.</p>
+
+        <div class="tab-1__datasource" v-for="dataSource in sheetMap">
+          <p class="tab-1__datasource-name">{{ dataSource.dsName }} - [{{dataSource.sheets.length}}]</p>
+
+          <div class="tab-1__section">
+            <p><b>Worksheets - [{{dataSource.sheets.filter(sheet => sheet.type === 'worksheet').length}}]</b></p>
+            <div class="tab-1__list">
+              <div v-for="sheet in dataSource.sheets.filter(sheet => sheet.type === 'worksheet')" :key="sheet.name"
+                class="tab-1__item">
+                <!-- <img class="tab-1__tabicon"
+                  :src="'https://cdn.glitch.global/945b8f26-7039-4242-b7b8-583646c92829/' + sheet.type + '.png'" /> -->
+                <span>{{ sheet.name }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-1__section">
+            <p><b>Dashboards - [{{dataSource.sheets.filter(sheet => sheet.type === 'dashboard').length}}]</b></p>
+            <div class="tab-1__list">
+              <div v-for="sheet in dataSource.sheets.filter(sheet => sheet.type === 'dashboard')" :key="sheet.name"
+                class="tab-1__item">
+                <img class="tab-1__tabicon"
+                  :src="'https://cdn.glitch.global/945b8f26-7039-4242-b7b8-583646c92829/' + sheet.type + '.png'" />
+                <span>{{ sheet.name }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="block" v-if="currentTab===2" v-cloak>
+        <p class="tab-description">This tab shows the data sources linked to each individual sheet.</p>
+
+        <div class="tab-2__sheet-list">
+          <div v-for="(dataSources, sheet) in getSheetDataSourceMapping()" :key="sheet" class="tab-2__sheet-item">
+            <p class="tab-2__sheet-name">{{ sheet }}</p>
+
+            <ul class="tab-2__datasource-list">
+              <li v-for="dataSource in dataSources" :key="dataSource" class="tab-2__datasource-item">
+                {{ dataSource }}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" v-if="currentTab === 3" v-cloak>
+        <p class="tab-description">This tab displays fields used in sheets. It also allows you to view worksheets &
+          calculations where those fields are used.</p>
+
+        <label class="checkbox wholeWidth is-size-7 mb-1 has-text-right">
+          <input type="checkbox" v-model="showSheets" />
+          Show worksheets & calculations where fields are used
+        </label>
+
+        <div class="tab-fields-sheets__datasource" v-for="dataSource in fieldMap" :key="dataSource.dsName">
+
+          <p class="tab-fields-sheets__datasource-name">{{ dataSource.dsName }} ({{ dataSource.fields.length }})</p>
+
+
+          <div class="tab-fields-sheets__section">
+            <p><b>DataSource Fields - [{{dataSource.fields.filter(field => field.type === 'datasourcefield').length}}]</b></p>
+            <div :class="['tab-fields-sheets__field-list', { 'show-sheets': showSheets }]">
+              <div v-for="field in dataSource.fields" v-if="field.type === 'datasourcefield'" :key="field.name"
+                class="tab-fields-sheets__field-item">
+
+                <div class="tab-fields-sheets__field-details">
+                  <p class="tab-fields-sheets__field-name">{{ field.name }}</p>
+                  <span v-if="showSheets">
+                    <ul class="tab-fields-sheets__worksheet-list">
+                      <li v-for="ws in field.worksheets" :key="ws">{{ ws }}</li>
+                    </ul>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-fields-sheets__section">
+            <p><b>Calculated Fields - [{{dataSource.fields.filter(field => field.type === 'calculation').length}}]</b></p>
+            <div :class="['tab-fields-sheets__field-list', { 'show-sheets': showSheets }]">
+              <div v-for="field in dataSource.fields" v-if="field.type === 'calculation'" :key="field.name"
+                class="tab-fields-sheets__field-item">
+                <!-- <img class="tab-fields-sheets__tab-icon"
+                  :src="'https://cdn.glitch.global/945b8f26-7039-4242-b7b8-583646c92829/' + field.type + '.png'"
+                  alt="Calculated Field Icon" /> -->
+                <div class="tab-fields-sheets__field-details">
+                  <p class="tab-fields-sheets__field-name">{{ field.name }}</p>
+                  <span v-if="showSheets">
+                    <ul class="tab-fields-sheets__worksheet-list">
+                      <li v-for="ws in field.worksheets" :key="ws">{{ ws }}</li>
+                    </ul>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+
+        </div>
+      </div>
+
+
+
+      <div class="card tab-field-names" v-if="currentTab === 4" v-cloak>
+        <p class="tab-field-names-description">This tab shows the original and calculated field names for each data
+          source used in the workbook.</p>
+        <p class="tab-field-names-note">IMP Note: Only Fields that are used in workbooks will be displayed here. Unused
+          fields might not be visible.</p>
+
+        <div class="tab-field-names-card" v-for="(fields, dataSource) in getDataSourcFieldNames()" :key="dataSource">
+          <header class="tab-field-names-card-header">
+            <p class="tab-field-names-card-header-title">{{ dataSource }}</p>
+          </header>
+          <div class="tab-field-names-card-content">
+            <h4 class="tab-field-names-heading">Original Fields:</h4>
+            <div class="tab-field-names-original-fields">
+              <ul class="tab-field-names-field-list">
+                <li v-for="field in fields.original" :key="field">{{ field }}</li>
+              </ul>
+            </div>
+
+            <h4 class="tab-field-names-heading">Calculated Fields:</h4>
+            <div class="tab-field-names-calculated-fields">
+              <ul>
+                <li v-for="field in fields.calculated" :key="field.name">{{ field.name }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="calculation-tab" v-if="currentTab === 5" v-cloak>
+        <p class="calculation-tab-description">
+          This tab shows the calculations used for the calculated fields in your Tableau workbook.
+        </p>
+        
+          <button  @click="exportToExcel()">
+            <span >Export</span>
+          </button>
+
+        <div class="calculation-block" v-for="dataSource in fieldMap">
+          <p class="calculation-dataSource">{{ dataSource.dsName }}</p>
+
+          <div v-if="dataSource.fields.some(field => field.type === 'calculation')" class="calculation-field-list">
+            <p><b>Calculated Fields:</b></p>
+
+            <div v-for="field in dataSource.fields" v-if="field.type === 'calculation'" :key="field.name"
+              class="calculation-field-item">
+              <div class="calculation-field-container">
+
+                <button class="copy-code-btn" @click="copyToClipboard(field.calc)">
+                  <span class="copy-icon">📋</span>
+                </button>
+
+                <div class="calculation-field-details">
+                  <p class="calculation-field-name"><strong>{{ field.name }}:</strong></p>
+                  <p class="calculation-field-formula">{{ field.calc }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+<!-- Tab 6: Worksheets and Dashboards -->
+<!-- <div v-show="currentTab === 6" class="tab-content tab-6">
+  <h4 class="tab-6__heading">Worksheets and Dashboards</h4>
+  <div class="tab-6__list">
+    <div 
+      class="tab-6__item" 
+      v-for="(ws, index) in worksheetList" 
+      :key="index">
+      <div class="tab-6__item-header">
+        <i :class="ws.type === 'worksheet' ? 'fas fa-table' : 'fas fa-columns'" class="tab-6__icon"></i>
+        <div class="tab-6__item-name">{{ ws.name }}</div>
+      </div>
+      <div class="tab-6__item-type">Type: {{ ws.type }}</div>
+    </div>
+  </div>
+</div> -->
+
+<div v-show="currentTab === 6" class="tab-content tab-6">
+  <!-- <h4 class="tab-6__heading">Worksheets and Dashboards</h4> -->
+
+  <!-- Worksheets Section -->
+  <div class="tab-6__section">
+    <h5 class="tab-6__section-heading">Worksheets</h5>
+    <ul class="tab-6__list">
+      <li 
+        class="tab-6__item" 
+        v-for="(ws, index) in getUniqueList('worksheet')" 
+        :key="index">
+        <div class="tab-6__item-header">
+          <i class="fas fa-table tab-6__icon"></i>
+          <div class="tab-6__item-name">{{ ws.name }}</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Dashboards Section -->
+  <div class="tab-6__section">
+    <h5 class="tab-6__section-heading">Dashboards</h5>
+    <ul class="tab-6__list">
+      <li 
+        class="tab-6__item dashboard" 
+        v-for="(ws, index) in getUniqueList('dashboard')" 
+        :key="index">
+        <div class="tab-6__item-header">
+          <i class="fas fa-columns tab-6__icon"></i>
+          <div class="tab-6__item-name">{{ ws.name }}</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+<!--
+Tab 7: Fields and Dependencies
+<div v-show="currentTab === 7" class="tab-content tab-7">
+  <h4 class="tab-7__heading">Fields and Dependent Fields</h4>
+  <div class="tab-7__list">
+    <div 
+      class="tab-7__data-source" 
+      v-for="(ds, index) in dataSourceFields" 
+      :key="index">
+      <strong class="tab-7__ds-name">{{ ds.dsName }}</strong>
+      <div class="tab-7__fields">
+        Original Fields Section
+        <div class="tab-7__section">
+          <strong>Original Fields:</strong>
+          <ul class="tab-7__fields-list">
+            <li v-for="(field, i) in ds.original" :key="i" class="tab-7__field-item">
+              {{ field }}
+            </li>
+          </ul>
+        </div>
+
+        Calculated Fields Section
+        <div class="tab-7__section">
+          <strong>Calculated Fields:</strong>
+          <ul class="tab-7__fields-list">
+            <li v-for="(field, i) in ds.calculated" :key="i" class="tab-7__field-item">
+              <span>{{ field.name }} (depends on: </span>
+              <ul class="tab-7__dependencies-list">
+                <li v-for="(dep, j) in field.dependencies" :key="j">{{ dep }}</li>
+              </ul>)
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> -->
+
+
+<!-- Tab 7: Fields and Dependencies -->
+<div v-show="currentTab === 7" class="tab-content tab_7-content">
+
+  <div class="tab_7-list">
+    <div class="tab_7-data-source" v-for="(ds, index) in dataSourceFields" :key="index">
+
+      <!-- Data Source Name -->
+      <div class="tab_7-ds-name-wrapper">
+        <strong class="tab_7-ds-name">{{ ds.dsName }}</strong>
+      </div>
+
+      <!-- Independent Calculations Section -->
+      <div class="tab_7-section">
+        <h5 class="tab_7-section-heading">Independent Calculations</h5>
+        <div class="tab_7-fields-grid">
+          <div class="tab_7-fields-column">
+            <ul class="tab_7-fields-list">
+              <li v-for="(field, i) in getIndependentCalculations(ds.calculated)" :key="i" class="tab_7-field-item">
+                <div class="tab_7-field-name">{{ field.name }}</div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dependent Calculations Section -->
+      <div class="tab_7-section">
+        <h5 class="tab_7-section-heading">Dependent Calculations</h5>
+        <div class="tab_7-fields-grid">
+          <div class="tab_7-fields-column">
+            <ul class="tab_7-fields-list">
+              <li v-for="(field, i) in getDependentCalculations(ds.calculated)" :key="i" class="tab_7-field-item tab_7-dependant">
+                <div class="tab_7-field-name">{{ field.name }}</div>
+                <div class="tab_7-dependencies">
+                  <ul class="tab_7-dependencies-list">
+                    <li v-for="(dep, j) in getUniqueDependencies(field.dependencies)" :key="j" class="tab_7-dependency-item">{{ dep }}</li>
+                  </ul>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    </div>
+  </section>
+
+  <style>
+    .tab-description {
+      font-size: 14px;
+      color: #555;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</body>
+
+</html>
