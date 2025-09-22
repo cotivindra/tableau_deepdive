@@ -1,0 +1,1023 @@
+@import "https://cdn.jsdelivr.net/npm/bulma@0.9.2/css/bulma.min.css";
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap");
+html,
+body {
+  font-family: Inter, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  overflow: auto;
+}
+
+[v-cloak] {
+  display: none;
+}
+
+.container {
+  min-width: 500px;
+  width: min-content;
+}
+
+.dataSource {
+  font-weight: bold;
+}
+
+.sheet {
+  margin-left: 10px;
+}
+
+.fieldSheet {
+  margin-left: 15px;
+  font-size: 12px;
+  columns: 2;
+  -webkit-columns: 2;
+  -moz-columns: 2;
+}
+
+.tabicon {
+  margin-right: 5px;
+}
+
+.error {
+  color: #cc0f35;
+}
+
+.wholeWidth {
+  width: 100%;
+}
+
+.card{
+  margin-bottom: 5px;
+  margin-top: 5px;
+
+}
+.card-header{
+  box-shadow:none;
+}
+.card-content{
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.field-list{
+  columns: 3;
+  -webkit-columns: 3;
+  -moz-columns: 3;
+
+}
+.calculated-fields{
+  columns: 2;
+  -webkit-columns: 2;
+  -moz-columns: 2;
+  font-size: 14px;
+}
+
+
+.card-header-title{
+  padding-bottom: 0;
+}
+
+/* Style for the tab content */
+.card {
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+}
+
+.dataSource {
+  margin-top: 20px;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.field-list {
+  margin-top: 10px;
+}
+
+.calculated-field {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-left: 4px solid #4CAF50; /* Green line to highlight calculated fields */
+  border-radius: 8px;
+}
+
+.field-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.tab-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+}
+.tabs .is-active a {
+  background-color: #007bff;
+  /* color: white; */
+}
+
+.tabs li a:hover {
+  background-color: #007bff;
+  /* color: white; */
+}
+.field-details {
+  flex-grow: 1;
+}
+
+.field-name {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.field-formula {
+  margin-top: 5px;
+  font-size: 1rem;
+  color: #555;
+  background-color: #f1f1f1;
+  padding: 10px;
+  border-radius: 5px;
+  word-wrap: break-word;
+}
+
+.tab-description {
+  font-size: 1rem;
+  color: #888;
+  margin-top: 20px;
+  font-style: italic;
+}
+
+.field-item:hover {
+  background-color: #e7f9e7;
+  cursor: pointer;
+}
+
+p.no-calculated-fields {
+  font-style: italic;
+  color: #888;
+}
+
+
+/* Specific styles for Calculation Tab (Tab 5) */
+.calculation-tab {
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.calculation-tab-description {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.calculation-block {
+  margin-bottom: 20px;
+}
+
+.calculation-dataSource {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0044cc;
+  margin-bottom: 10px;
+}
+
+.calculation-field-list {
+  margin-left: 20px;
+}
+
+
+.calculation-field-container {
+  display: flex;
+  align-items: flex-start;
+}
+
+.calculation-icon {
+  width: 30px;
+  height: 30px;
+  margin-right: 15px;
+}
+
+.calculation-field-details {
+  max-width: 600px;
+}
+
+.calculation-field-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.calculation-field-formula {
+  font-size: 14px;
+  color: #555;
+  white-space: pre-wrap; /* Ensure multiline formulas are wrapped properly */
+  word-wrap: break-word;
+  margin-top: 5px;
+}
+
+/* Specific styles for Tab 4 (Field Names) */
+.tab-field-names {
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tab-field-names-description {
+  font-size: 1rem;
+  color: #888;
+  margin-top: 20px;
+  font-style: italic;
+}
+
+.tab-field-names-note {
+  font-size: 14px;
+  padding: 10px;
+  margin-bottom: 20px;
+  font-weight: bold;
+  color: #333;
+  background-color: #ffeb3b;
+  border-radius: 5px;
+}
+
+.tab-field-names-card {
+  margin-bottom: 20px;
+}
+
+.tab-field-names-card-header {
+  padding: 15px;
+  background-color: #0044cc;
+  color: #fff;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+.tab-field-names-card-header-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.tab-field-names-card-content {
+  padding: 15px;
+}
+
+.tab-field-names-heading {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #0044cc;
+}
+
+.tab-field-names-original-fields,
+.tab-field-names-calculated-fields {
+  margin-top: 10px;
+}
+
+.tab-field-names-field-list,
+.tab-field-names-calculated-fields ul {
+  list-style-type: disc;
+  padding-left: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3,  1fr);
+  gap: 10px;
+}
+
+.tab-field-names-field-list li,
+.tab-field-names-calculated-fields li {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.tab-field-names-original-fields ul li,
+.tab-field-names-calculated-fields ul li {
+  word-wrap: break-word;
+}
+
+
+
+/* ######################################################################################################### */
+/* ######################################################################################################### */
+
+/* Tab-specific styles */
+.tab-fields-sheets__datasource {
+  margin-bottom: 20px;
+}
+
+.tab-fields-sheets__datasource-name {
+  padding: 15px;
+  background-color: #0044cc;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.tab-fields-sheets__section {
+  margin-bottom: 20px;
+}
+
+.tab-fields-sheets__field-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Default to two columns */
+  gap: 15px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.tab-fields-sheets__field-item {
+  display: grid;
+  background-color: #f9f9f9;
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 4px solid #007bff; /* Blue left border for distinction */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s, box-shadow 0.3s;
+  max-width: 100%;
+}
+.tab-fields-sheets__section:last-child .tab-fields-sheets__field-item {
+  border-left: 4px solid #ff9800; /* Orange border for calculated fields */
+}
+
+/* 
+.tab-fields-sheets__field-item:hover {
+  background-color: #e6f7ff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+} */
+
+.tab-fields-sheets__tab-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+.tab-fields-sheets__field-details {
+  display: inline-block;
+  vertical-align: middle;
+  max-width: calc(100% - 40px); /* Ensure the text area doesn't stretch too much */
+  word-wrap: break-word;
+}
+
+.tab-fields-sheets__field-name {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.tab-fields-sheets__worksheet-list {
+  list-style-type: none;
+  padding-left: 0;
+  margin-top: 5px;
+}
+
+.tab-fields-sheets__worksheet-list li {
+  font-size: 0.9rem;
+  color: #555;
+  padding-left: 1rem;
+}
+
+/* Always show the worksheet list in two columns */
+.tab-fields-sheets__worksheet-list {
+  list-style-type: disc;  /* Bullet points */
+  padding-left: 20px; /* Indentation for bullet points */
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);  /* Always 2 columns */
+  gap: 10px; /* Space between columns */
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 5px;
+}
+
+.tab-fields-sheets__worksheet-list li {
+  padding-left: 10px; /* Indentation for bullet points */
+  transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+}
+
+/* Show worksheet list when field is hovered */
+/* 
+ .tab-fields-sheets__field-item:hover .tab-fields-sheets__worksheet-list {
+  display: block;
+}
+
+.tab-fields-sheets__worksheet-list li:hover {
+  background-color: #f0f0f0; 
+  cursor: pointer;
+}  */
+
+
+/* Adjust the number of columns dynamically based on checkbox state */
+.tab-fields-sheets__field-list.show-sheets {
+  grid-template-columns: 1fr; /* 1 column when "Show worksheets & calculations where fields are used" is enabled */
+}
+
+/* Style for the checkbox */
+.checkbox {
+  margin-bottom: 20px;
+}
+
+/* Style for the tab description */
+.tab-description {
+  font-size: 1rem;
+  color: #888;
+  margin-top: 20px;
+  font-style: italic;
+}
+
+
+/* ######################################################################################################################### */
+/* ######################################################################################################################### */
+
+/* Tab-specific styles for Tab 1 */
+.tab-1__datasource {
+  margin-bottom: 20px;
+}
+
+.tab-1__datasource-name {
+  padding: 15px;
+  background-color: #0044cc;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.tab-1__section {
+  margin-bottom: 20px;
+}
+
+.tab-1__list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Two columns */
+  gap: 15px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.tab-1__item {
+  display: flex;
+  align-items: center;
+  background-color: #f9f9f9;
+  padding: 10px; 
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 0.9rem;
+}
+
+/* Style for worksheets (blue border-left) */
+.tab-1__section:first-of-type .tab-1__item {
+  border-left: 4px solid #007bff; /* Blue left border for worksheets */
+}
+
+/* Style for dashboards (orange border-left) */
+.tab-1__section:last-of-type .tab-1__item {
+  border-left: 4px solid #ff9800; /* Orange left border for dashboards */ 
+  background-color: #fff3e0; 
+}
+
+.tab-1__tabicon {
+  width: 18px; /* Decreased icon size */
+  height: 18px; /* Decreased icon size */
+  margin-right: 10px;
+}
+
+.tab-1__item span {
+  font-size: 1rem;
+  color: #333;
+}
+
+/* Style for the tab description */
+.tab-description {
+  font-size: 1rem;
+  color: #888;
+  margin-top: 20px;
+  font-style: italic;
+}
+
+
+/* ############################################################################################### */
+/* ############################################################################################### */
+
+/* Tab-specific styles for Tab 2 */
+.tab-2__datasource {
+  margin-bottom: 20px;
+}
+
+.tab-2__datasource-name {
+  padding: 15px;
+  background-color: #0044cc; /* Dark blue background */
+  color: #fff; /* White text */
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.tab-2__sheet-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Two columns */
+  gap: 20px; /* Space between columns */
+  margin-top: 20px;
+}
+
+.tab-2__sheet-item {
+  background-color: #f9f9f9; /* Light grey background */
+  padding: 12px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tab-2__sheet-name {
+  font-size: 1.1rem; /* Sheet name font size */
+  font-weight: bold;
+  color: #fff; /* White text */
+  margin-bottom: 10px;
+  padding: 5px;
+  background-color: #0044cc; /* Same as datasource title background color */
+  border-radius: 4px;
+}
+
+.tab-2__datasource-list {
+  list-style-type: disc; /* Bullet points */
+  padding-left: 20px; /* Indentation for bullets */
+  margin-top: 0;
+}
+
+.tab-2__datasource-item {
+  font-size: 0.9rem;
+  color: #555; /* Light grey color for datasources */
+  padding: 4px 0;
+}
+
+.tab-description {
+  font-size: 1rem;
+  color: #888; /* Grey color for description */
+  margin-top: 20px;
+  font-style: italic;
+}
+
+
+/* ############################################################################################################## */
+/* ############################################################################################################## */
+
+/* Tab-specific styles for Tab 5 */
+.calculation-tab {
+  padding: 20px;
+}
+
+.calculation-tab-description {
+  font-size: 1rem;
+  color: #888;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+/* DataSource Block Style */
+.calculation-block {
+  margin-bottom: 30px;
+}
+
+.calculation-dataSource {
+  background-color: #0044cc;
+  color: white; /* White color for DataSource name */
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+/* Calculated Field List */
+.calculation-field-list {
+  padding-left: 20px;
+}
+
+
+
+/* Field Container (Details) */
+.calculation-field-container {
+  display: flex;
+  align-items: flex-start; /* Align items to the top */
+}
+
+.calculation-field-details {
+  word-wrap: break-word;
+}
+
+.calculation-field-name {
+  font-size: 1.1rem; /* Slightly larger font for the field name */
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.calculation-field-formula {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* Main container for the tab */
+.calculation-tab {
+  padding: 20px;
+}
+
+.calculation-tab-description {
+  font-size: 1rem;
+  color: #888;
+  font-style: italic;
+  margin-bottom: 20px;
+}
+
+/* Styling for the dataSource name */
+.calculation-dataSource {
+  padding: 15px;
+  background-color: #0044cc;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  margin-bottom: 10px;
+}
+
+/* Section for each dataSource */
+.calculation-block {
+  margin-bottom: 20px;
+}
+
+/* The list of calculated fields */
+.calculation-field-list {
+  margin-top: 15px;
+}
+
+/* Each calculated field item */
+.calculation-field-item {
+  position: relative; /* Allow absolute positioning inside */
+  background-color: #f9f9f9;
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 4px solid #007bff; /* Blue border for distinction */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 15px;
+}
+
+/* Copy button styling */
+.copy-code-btn {
+  position: absolute;  /* Position it in the top-right corner of the field item */
+  top: 5px;
+  right: 5px;
+  /* background-color: #007bff; Blue background */
+  color: white;
+  font-size: 1rem;
+  padding: 5px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.copy-code-btn:hover {
+  background-color: #555;
+}
+
+/* Styling for the copy icon */
+.copy-icon {
+  font-size: 16px;
+}
+
+/* Field details styling */
+.calculation-field-details {
+  margin-top: 10px;
+}
+
+.calculation-field-name {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+/* Styling the calculation formula (code style) */
+.calculation-field-formula {
+  font-size: 0.9rem;  /* Reduced text size */
+  color: #333;
+  word-wrap: break-word;
+  white-space: pre-wrap; /* Ensure long formulas wrap properly */
+  
+  /* Styling the formula to appear like code */
+  font-family: 'Courier New', Courier, monospace;
+  background-color: #f4f4f4;
+  border: 1px solid #ddd;
+  padding: 8px;  /* Reduced padding */
+  border-radius: 4px;
+  margin-top: 5px;
+  overflow-x: auto; /* Make sure long code doesn't overflow */
+  line-height: 1.3; /* Decreased line spacing for more compact look */
+}
+
+
+/* ########################################### */
+
+/* Sticky class for tabs */
+.sticky-tabs {
+  position: -webkit-sticky; /* For Safari */
+  position: sticky;
+  top: 0; /* Keep it at the top */
+  z-index: 10; /* Ensure it stays above other content */
+  background-color: #fff; /* Set background color to prevent transparency */
+  padding: 10px 0; /* Add some spacing above and below the tabs */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Optional shadow for better visibility */
+}
+
+/* Make only the content of the tabs scrollable */
+.tab-content-wrapper {
+  height: 400px; /* Set a fixed height for the content area */
+  overflow-y: auto; /* Enable vertical scrolling */
+  /* padding: 10px; Add padding if you want space between content and edges */
+}
+
+/* Make the card inside each tab scrollable */
+/* .tab-card {
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+} */
+
+/* ##################################################################################################### */
+
+/* Tab 6: Styling for Worksheets and Dashboards */
+.tab-6__section {
+  margin-bottom: 30px; 
+}
+
+.tab-6__section-heading {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15px;
+}
+.tab-6__list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 15px;
+}
+
+
+
+.tab-6__item-header {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.tab-6__icon {
+  font-size: 1.2rem;
+  margin-right: 10px;
+}
+
+.tab-6__item-name {
+  font-size: 1.1rem;
+}
+
+.tab-6__item-type {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* Default Styles for Tab 6 Items */
+.tab-6__item {
+  background-color: #f9f9f9;
+  padding: 5px;
+  border-radius: 6px;
+  border-left: 4px solid #007bff; 
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s, box-shadow 0.3s;
+  margin-bottom: 10px;
+  font-size: 1rem;
+  color: #333;
+  word-wrap: break-word; 
+}
+
+/* Hover Effect for Tab 6 Items */
+.tab-6__item:hover {
+  background-color: #e6f7ff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Styles for Dashboards (Orange Left Border) */
+.tab-6__item.dashboard {
+  border-left: 4px solid #ff9800; 
+  background-color: #fff3e0; 
+}
+
+/* Hover Effect for Dashboards */
+.tab-6__item.dashboard:hover {
+  background-color: #ffe0b2; 
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+
+
+/* ########################################################################################### */
+
+
+/* Tab 7 Specific Styles */
+.tab_7-content {
+  padding: 20px;
+  background-color: #f4f4f4;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tab_7-heading {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #0044cc;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.tab_7-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tab_7-data-source {
+  margin-bottom: 25px;
+}
+
+.tab_7-ds-name-wrapper {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.tab_7-ds-name {
+  padding: 15px;
+  background-color: #0044cc;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  flex-grow: 1;
+}
+
+/* Section Heading Styling */
+.tab_7-section {
+  margin-bottom: 20px;
+}
+
+.tab_7-section-heading {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Field list displayed in two columns */
+.tab_7-fields-list {
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px; 
+  margin-top: 15px;
+  list-style: none;
+  padding: 0;
+}
+
+.tab_7-field-item {
+  background-color: #f9f9f9;
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 4px solid #007bff; /* Blue border for Independent Calculations */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s, box-shadow 0.3s;
+  margin-bottom: 10px;
+  font-size: 1rem;
+  color: #333;
+  word-wrap: break-word; /* Prevent overflow by wrapping long words */
+}
+
+.tab_7-field-item:hover {
+  background-color: #e6f7ff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tab_7-dependencies {
+  margin-top: 10px;
+}
+
+.tab_7-dependencies-list {
+  list-style-type: disc;
+  padding-left: 20px;
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.tab_7-dependency-item {
+  padding-left: 10px;
+}
+
+.tab_7-field-name {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+/* Dependent Fields Styling */
+.tab_7-field-item.tab_7-dependant {
+  border-left: 4px solid #ff9800; /* Orange border for Dependent Calculations */
+  background-color: #fff3e0; /* Light orange background for dependent fields */
+}
+
+/* Add smooth hover effect for better interactivity */
+/* .tab_7-field-item:hover {
+  background-color: #e6f7ff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+} */
+
+/* Section padding and background improvements */
+.tab_7-section {
+  padding: 15px;
+  background-color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+
+/* ################################################# */
+
+.tab-unused-fields__datasource-name {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+  text-decoration: underline; /* Underline to make the data source name stand out */
+}
+
+.tab-unused-fields__section {
+  margin-top: 15px;
+}
+
+.tab-unused-fields__list {
+  list-style-type: disc;  /* Bullet points */
+  padding-left: 20px; /* Indentation for bullet points */
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);  /* Always 2 columns */
+  gap: 10px; /* Space between columns */
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 5px;
+}
+
+.tab-unused-fields__field-item {
+  padding-left: 10px; /* Indentation for bullet points */
+  transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+}
+
+.tab-unused-fields__field-item:hover {
+  background-color: #f2f2f2; /* Highlight unused fields on hover */
+}
+
+.tab-unused-fields__field-name {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #555;
+  padding: 5px;
+  background-color: #f9f9f9; /* Light background for unused fields */
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Slight shadow for better visibility */
+  margin-bottom: 5px;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tab-unused-fields__field-name:hover {
+  background-color: #e6e6e6; /* Light grey background on hover */
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2); /* Slight shadow effect on hover */
+}
