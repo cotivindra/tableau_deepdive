@@ -764,7 +764,7 @@ let app = new Vue({
       ws['!rows'] = this.autoFitRows(sheetData);
   
       // Append the sheet to the workbook
-      XLSX.utils.book_append_sheet(wb, ws, ds.dsName);
+      XLSX.utils.book_append_sheet(wb, ws, ds.dsName.slice(0, 31));
     });
   
     // Generate and download the Excel file
@@ -801,3 +801,4 @@ let app = new Vue({
   },
 },
 });
+
