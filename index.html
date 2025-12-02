@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tableau DeepDive</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+  <script src="https://cdn.jsdelivr.net/gh/Stuk/jszip@master/dist/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script src="./script.js" defer></script>
+  <!-- <script src="./script.js" defer></script> -->
+</head>
+
+<body>
+  <section class="section" id="app">
+    <div class="container">
+      <!-- Sticky Header -->
+      <div class="sticky-header">
+        <div class="header-content">
+          <div class="header-left">
+            <h1 class="title has-text-centered">Tableau DeepDive 🌊🔎</h1>
+            <p class="subtitle has-text-centered">
+              Upload your Tableau workbook and explore the connections between data sources, sheets, and calculations!
+            </p>
+          </div>
+          <div class="header-right">
+            <button class="btn btn-about" @click="showAboutModal = true" title="About">ℹ️ About</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Utility Bar & Stats -->
+      <div class="sticky-wrapper" v-if="sheetMap.length > 0">
+        <div class="utility-bar" v-if="showDarkModeToggle || showExportAllButton || showExportPDFButtons || showStatsButton">
+          <button v-if="showDarkModeToggle" class="btn btn-toggle" @click="toggleDarkMode" title="Toggle Dark Mode">{{ darkMode ? '☀️ Light Mode' : '🌙 Dark Mode' }}</button>
+          <button v-if="showExportAllButton" class="btn btn-export-all" @click="exportAllData" title="Export Complete Analysis">📊 Export All Data</button>
+          <button v-if="showExportPDFButtons" class="btn btn-pdf" @click="exportCurrentTabToPDF" title="Export Current Tab to PDF">📄 Export Tab PDF</button>
+          <button v-if="showExportPDFButtons" class="btn btn-pdf-all" @click="exportAllTabsToPDF" title="Export All Tabs to PDF">📚 Export All PDFs</button>
+          <button v-if="showStatsButton" class="btn btn-stats" @click="showStats = !showStats" title="Toggle Statistics">{{ showStats ? '📈 Hide Stats' : '📊 Show Stats' }}</button>
+        </div>
+      
+        <!-- Statistics Panel -->
+        <div v-if="showStats && sheetMap.length > 0" class="stats-panel" v-cloak>
+        <h3 class="stats-title">📊 Workbook Statistics</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">{{ workbookStats.totalWorksheets }}</div>
+            <div class="stat-label">Worksheets</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ workbookStats.totalDashboards }}</div>
+            <div class="stat-label">Dashboards</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ workbookStats.totalDataSources }}</div>
+            <div class="stat-label">Data Sources</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ workbookStats.totalFields }}</div>
+            <div class="stat-label">Total Fields</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ workbookStats.totalCalculatedFields }}</div>
+            <div class="stat-label">Calculated Fields</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ workbookStats.totalParameters }}</div>
+            <div class="stat-label">Parameters</div>
+          </div>
+          <div class="stat-card warning">
+            <div class="stat-value">{{ workbookStats.totalUnusedFields }}</div>
+            <div class="stat-label">Unused Fields</div>
+          </div>
+          <div class="stat-card" :class="workbookStats.totalUnusedParameters > 0 ? 'warning' : 'success'">
+            <div class="stat-value">{{ workbookStats.totalUnusedParameters }}</div>
+            <div class="stat-label">Unused Parameters</div>
+          </div>
+          <div class="stat-card" :class="workbookStats.unusedFieldPercentage > 30 ? 'warning' : 'success'">
+            <div class="stat-value">{{ workbookStats.unusedFieldPercentage }}%</div>
+            <div class="stat-label">Unused %</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ workbookStats.complexCalculations.length }}</div>
+            <div class="stat-label">Complex Calcs</div>
+          </div>
+        </div>
+        
+        <!-- Most Used Fields -->
+        <div v-if="workbookStats.mostUsedFields.length > 0" class="stats-section">
+          <h4 class="stats-subtitle">🔥 Most Used Fields</h4>
+          <div class="top-fields-list">
+            <div v-for="(field, idx) in workbookStats.mostUsedFields.slice(0, 5)" :key="idx" class="top-field-item">
+              <span class="field-rank">{{ idx + 1 }}</span>
+              <span class="field-info">{{ field.fieldName }} ({{ field.dsName }})</span>
+              <span class="field-count">{{ field.count }} uses</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      </div>
+      
+      <!-- File Upload -->
+      <div class="block" v-cloak>
+        <div class="file has-name is-fullwidth">
+          <label class="file-label">
+            <input class="file-input" type="file" accept=".twb,.twbx" @change="processFile($event)" />
+            <span class="file-cta"><span class="file-label">Select a .twb or .twbx</span></span>
+            <span class="file-name">{{fileName}}</span>
+          </label>
+        </div>
+        <p class="error">{{errorMessage}}</p>
+      </div>
+      
+      <!-- Navigation Tabs -->
+      <div class="sticky-tabs-container" v-if="sheetMap.length > 0 || fieldMap.length > 0">
+        <div class="tabs is-boxed sticky-tabs" role="tablist" aria-label="Analysis Tabs">
+          <ul>
+            <li :class="currentTab === 6 ? 'is-active' : ''" role="presentation">
+              <a @click="currentTab = 6" role="tab" :aria-selected="currentTab === 6" tabindex="0" @keydown.enter="currentTab = 6" @keydown.space.prevent="currentTab = 6"><span>📋 Overview</span></a>
+            </li>
+            <li :class="currentTab === 1 ? 'is-active' : ''" role="presentation">
+              <a @click="currentTab = 1" role="tab" :aria-selected="currentTab === 1" tabindex="0" @keydown.enter="currentTab = 1" @keydown.space.prevent="currentTab = 1"><span>🗂️ Data Sources</span></a>
+            </li>
+            <li :class="currentTab === 2 ? 'is-active' : ''" role="presentation">
+              <a @click="currentTab = 2" role="tab" :aria-selected="currentTab === 2" tabindex="0" @keydown.enter="currentTab = 2" @keydown.space.prevent="currentTab = 2"><span>📊 Sheet Mapping</span></a>
+            </li>
+            <li :class="currentTab === 3 ? 'is-active' : ''" role="presentation">
+              <a @click="currentTab = 3" role="tab" :aria-selected="currentTab === 3" tabindex="0" @keydown.enter="currentTab = 3" @keydown.space.prevent="currentTab = 3"><span>🔍 Field Usage</span></a>
+            </li>
+            <li :class="currentTab === 4 ? 'is-active' : ''" role="presentation">
+              <a @click="currentTab = 4" role="tab" :aria-selected="currentTab === 4" tabindex="0" @keydown.enter="currentTab = 4" @keydown.space.prevent="currentTab = 4"><span>📝 All Fields</span></a>
+            </li>
+            <li :class="currentTab === 5 ? 'is-active' : ''" role="presentation">
+              <a @click="currentTab = 5" role="tab" :aria-selected="currentTab === 5" tabindex="0" @keydown.enter="currentTab = 5" @keydown.space.prevent="currentTab = 5"><span>🧮 Calculations</span></a>
+            </li>
+            <li :class="currentTab === 7 ? 'is-active' : ''" role="presentation">
+              <a @click="currentTab = 7" role="tab" :aria-selected="currentTab === 7" tabindex="0" @keydown.enter="currentTab = 7" @keydown.space.prevent="currentTab = 7"><span>🔗 Dependencies</span></a>
+            </li>
+            <li :class="currentTab === 10 ? 'is-active' : ''" role="presentation">
+              <a @click="currentTab = 10" role="tab" :aria-selected="currentTab === 10" tabindex="0" @keydown.enter="currentTab = 10" @keydown.space.prevent="currentTab = 10"><span>💡 Impact Analysis</span></a>
+            </li>
+            <li :class="currentTab === 8 ? 'is-active' : ''" role="presentation">
+              <a @click="currentTab = 8" role="tab" :aria-selected="currentTab === 8" tabindex="0" @keydown.enter="currentTab = 8" @keydown.space.prevent="currentTab = 8"><span>⚠️ Unused Fields</span></a>
+            </li>
+            <li :class="currentTab === 9 ? 'is-active' : ''" role="presentation">
+              <a @click="currentTab = 9" role="tab" :aria-selected="currentTab === 9" tabindex="0" @keydown.enter="currentTab = 9" @keydown.space.prevent="currentTab = 9"><span>📈 Analytics</span></a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- Tab Content -->
+      <div class="tab-content-wrapper">
+
+      <div v-if="currentTab === 0" v-cloak>
+        <p class="tab-description">Made by Ravindra</p>
+        <p class="tab-description">New features Coming Soon...</p>
+        <img :src="logos[currentLogoIndex]" alt="Logo" class="image-class">
+      </div>
+      
+      <div v-if="currentTab === 1" class="card" v-cloak>
+        <div class="tab-header">
+          <h2 class="tab-header-title">
+            <span class="tab-header-icon">🗂️</span>
+            Data Sources Overview
+          </h2>
+          <p class="tab-header-description">
+            Explore which worksheets and dashboards are connected to each data source in your workbook.
+          </p>
+        </div>
+        
+        <div class="datasource-filter">
+          <label for="dsFilterTab1">Filter by Data Source:</label>
+          <select id="dsFilterTab1" v-model="selectedDatasourceTab1" class="datasource-dropdown">
+            <option value="">All Data Sources</option>
+            <option v-for="ds in availableDataSources" :key="ds" :value="ds">{{ ds }}</option>
+          </select>
+        </div>
+
+        <div class="tab-1__datasource" v-for="dataSource in filteredSheetMapTab1" :key="dataSource.dsName">
+          <p class="tab-1__datasource-name">{{ dataSource.dsName }} - [{{dataSource.sheets.length}}]</p>
+          <div class="tab-1__section">
+            <p><b>Dashboards - [{{dataSource.sheets.filter(sheet => sheet.type === 'dashboard').length}}]</b></p>
+            <div class="tab-1__list">
+              <div v-for="sheet in dataSource.sheets.filter(sheet => sheet.type === 'dashboard')" :key="sheet.name" class="tab-1__item">
+                <img class="tab-1__tabicon" :src="'https://cdn.glitch.global/945b8f26-7039-4242-b7b8-583646c92829/' + sheet.type + '.png'" />
+                <span>{{ sheet.name }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="tab-1__section">
+            <p><b>Worksheets - [{{dataSource.sheets.filter(sheet => sheet.type === 'worksheet').length}}]</b></p>
+            <div class="tab-1__list">
+              <div v-for="sheet in dataSource.sheets.filter(sheet => sheet.type === 'worksheet')" :key="sheet.name" class="tab-1__item">
+                <span>{{ sheet.name }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div v-if="currentTab === 2" class="block" v-cloak>
+        <div class="tab-header">
+          <h2 class="tab-header-title">
+            <span class="tab-header-icon">📊</span>
+            Sheet to Data Source Mapping
+          </h2>
+          <p class="tab-header-description">
+            View which data sources are connected to each worksheet and dashboard.
+          </p>
+        </div>
+        
+        <div class="datasource-filter">
+          <label for="sheetFilterTab2">Filter by Sheet:</label>
+          <select id="sheetFilterTab2" v-model="selectedSheetTab2" class="datasource-dropdown">
+            <option value="">All Sheets</option>
+            <option v-for="sheet in availableSheets" :key="sheet" :value="sheet">{{ sheet }}</option>
+          </select>
+        </div>
+
+        <div class="tab-2__sheet-list">
+          <div v-for="(dataSources, sheet) in filteredSheetMapping" :key="sheet" class="tab-2__sheet-item">
+            <p class="tab-2__sheet-name">{{ sheet }}</p>
+
+            <ul class="tab-2__datasource-list">
+              <li v-for="dataSource in dataSources" :key="dataSource" class="tab-2__datasource-item">
+                {{ dataSource }}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+
+      <div v-if="currentTab === 3" class="card" v-cloak>
+        <div class="tab-header">
+          <h2 class="tab-header-title">
+            <span class="tab-header-icon">🔍</span>
+            Field Usage Tracker
+          </h2>
+          <p class="tab-header-description">
+            Discover which fields are used across your worksheets and identify where each field appears.
+          </p>
+        </div>
+        
+        <div class="datasource-filter">
+          <div class="filter-group">
+            <label for="dsFilterTab3">Filter by Data Source:</label>
+            <select id="dsFilterTab3" v-model="selectedDatasourceTab2" class="datasource-dropdown">
+              <option value="">All Data Sources</option>
+              <option v-for="ds in availableDataSources" :key="ds" :value="ds">{{ ds }}</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label for="fieldFilterTab2">Filter by Field Name:</label>
+            <select id="fieldFilterTab2" v-model="selectedFieldTab2" class="datasource-dropdown">
+              <option value="">All Fields</option>
+              <option v-for="field in availableFieldsTab2" :key="field" :value="field">{{ field }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="tab-fields-sheets__datasource" v-for="dataSource in filteredFieldMapTab2" :key="dataSource.dsName">
+
+          <p class="tab-fields-sheets__datasource-name">{{ dataSource.dsName }} ({{ dataSource.fields.length }})</p>
+
+
+          <div class="tab-fields-sheets__section">
+            <p><b>DataSource Fields - [{{dataSource.fields.filter(field => field.type === 'datasourcefield').length}}]</b></p>
+            <div :class="['tab-fields-sheets__field-list', { 'show-sheets': showSheets }]">
+              <div v-for="field in dataSource.fields" v-if="field.type === 'datasourcefield'" :key="field.name"
+                class="tab-fields-sheets__field-item">
+
+                <div class="tab-fields-sheets__field-details">
+                  <p class="tab-fields-sheets__field-name">{{ field.name }}</p>
+                  <span v-if="showSheets">
+                    <ul class="tab-fields-sheets__worksheet-list">
+                      <li v-for="ws in field.worksheets" :key="ws">{{ ws }}</li>
+                    </ul>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-fields-sheets__section">
+            <p><b>Calculated Fields - [{{dataSource.fields.filter(field => field.type === 'calculation').length}}]</b></p>
+            <div :class="['tab-fields-sheets__field-list', { 'show-sheets': showSheets }]">
+              <div v-for="field in dataSource.fields" v-if="field.type === 'calculation'" :key="field.name"
+                class="tab-fields-sheets__field-item">
+                <!-- <img class="tab-fields-sheets__tab-icon"
+                  :src="'https://cdn.glitch.global/945b8f26-7039-4242-b7b8-583646c92829/' + field.type + '.png'"
+                  alt="Calculated Field Icon" /> -->
+                <div class="tab-fields-sheets__field-details">
+                  <p class="tab-fields-sheets__field-name">{{ field.name }}</p>
+                  <span v-if="showSheets">
+                    <ul class="tab-fields-sheets__worksheet-list">
+                      <li v-for="ws in field.worksheets" :key="ws">{{ ws }}</li>
+                    </ul>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+
+        </div>
+      </div>
+
+
+      <div v-if="currentTab === 4" class="card tab-field-names"  v-cloak>
+        <div class="tab-header">
+          <h2 class="tab-header-title">
+            <span class="tab-header-icon">📝</span>
+            All Fields Inventory
+          </h2>
+          <p class="tab-header-description">
+            Complete list of all fields (original and calculated) across all data sources with usage status.
+          </p>
+        </div>
+        
+        <div class="filter-controls" style="margin-bottom: var(--spacing-md);">
+          <button 
+            :class="['btn', 'btn-sm', tab4ShowUsed ? 'btn-primary' : 'btn-secondary']" 
+            @click="tab4ShowUsed = !tab4ShowUsed">
+            {{ tab4ShowUsed ? '✓' : '' }} Used Fields
+          </button>
+          <button 
+            :class="['btn', 'btn-sm', tab4ShowUnused ? 'btn-primary' : 'btn-secondary']" 
+            @click="tab4ShowUnused = !tab4ShowUnused">
+            {{ tab4ShowUnused ? '✓' : '' }} Unused Fields
+          </button>
+        </div>
+        
+        <div class="datasource-filter">
+          <div class="filter-group">
+            <label for="dsFilterTab4">Filter by Data Source:</label>
+            <select id="dsFilterTab4" v-model="selectedDatasourceTab3" class="datasource-dropdown">
+              <option value="">All Data Sources</option>
+              <option v-for="ds in availableDataSources" :key="ds" :value="ds">{{ ds }}</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label for="fieldFilterTab3">Filter by Field Name:</label>
+            <select id="fieldFilterTab3" v-model="selectedFieldTab3" class="datasource-dropdown">
+              <option value="">All Fields</option>
+              <option v-for="field in availableFieldsTab3" :key="field" :value="field">{{ field }}</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="field-names-container">
+          <div class="field-names-datasource-card" v-for="(fields, dataSource) in filteredTab3Data" :key="dataSource">
+            <div class="field-names-card-header">
+              <div class="ds-header-left">
+                <span class="ds-icon">🗄️</span>
+                <h3 class="ds-title">{{ dataSource }}</h3>
+              </div>
+              <div class="ds-stats">
+                <span class="stat-badge stat-original">{{ fields.original.length }} Original</span>
+                <span class="stat-badge stat-calculated">{{ fields.calculated.length }} Calculated</span>
+                <span class="stat-badge stat-total">{{ fields.original.length + fields.calculated.length }} Total</span>
+              </div>
+            </div>
+            
+            <div class="field-names-card-body">
+              <div class="fields-section">
+                <div class="section-header">
+                  <span class="section-icon">📋</span>
+                  <h4 class="section-title">Original Fields ({{ fields.original.length }})</h4>
+                </div>
+                <div class="fields-grid">
+                  <div v-for="(field, idx) in fields.original" :key="field && field.name ? field.name : idx" 
+                       class="field-chip" :class="field && field.used ? 'chip-used' : 'chip-unused'">
+                    <span class="chip-text">{{ field ? field.name : 'Unknown' }}</span>
+                    <span v-if="field && !field.used" class="chip-badge">unused</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="fields-section" v-if="fields.calculated.length > 0">
+                <div class="section-header">
+                  <span class="section-icon">🧮</span>
+                  <h4 class="section-title">Calculated Fields ({{ fields.calculated.length }})</h4>
+                </div>
+                <div class="fields-grid">
+                  <div v-for="(field, idx) in fields.calculated" :key="field && field.name ? field.name : idx" 
+                       class="field-chip field-chip-calc" :class="field && field.used ? 'chip-used' : 'chip-unused'">
+                    <span class="chip-text">{{ field ? field.name : 'Unknown' }}</span>
+                    <span v-if="field && !field.used" class="chip-badge">unused</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div v-if="currentTab === 5" class="calculation-tab"  v-cloak>
+        <div class="tab-header tab-header-with-action">
+          <div class="tab-header-content">
+            <h2 class="tab-header-title">
+              <span class="tab-header-icon">🧮</span>
+              Calculation Formulas
+            </h2>
+            <p class="tab-header-description">
+              View all calculated field formulas and their definitions across your workbook.
+            </p>
+          </div>
+          <button class="export-excel-btn export-excel-btn-header" @click="exportToExcel()">
+            <span>📥 Export to Excel</span>
+          </button>
+        </div>
+        
+        <div class="filter-controls" style="margin-bottom: var(--spacing-md);">
+          <button 
+            :class="['btn', 'btn-sm', tab5ShowUsed ? 'btn-primary' : 'btn-secondary']" 
+            @click="tab5ShowUsed = !tab5ShowUsed">
+            {{ tab5ShowUsed ? '✓' : '' }} Used Fields
+          </button>
+          <button 
+            :class="['btn', 'btn-sm', tab5ShowUnused ? 'btn-primary' : 'btn-secondary']" 
+            @click="tab5ShowUnused = !tab5ShowUnused">
+            {{ tab5ShowUnused ? '✓' : '' }} Unused Fields
+          </button>
+        </div>
+        
+        <div class="datasource-filter">
+          <div class="filter-group">
+            <label for="dsFilterTab5">Filter by Data Source:</label>
+            <select id="dsFilterTab5" v-model="selectedDatasourceTab5" class="datasource-dropdown">
+              <option value="">All Data Sources</option>
+              <option v-for="ds in availableDataSources" :key="ds" :value="ds">{{ ds }}</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label for="fieldFilterTab5">Filter by Field Name:</label>
+            <select id="fieldFilterTab5" v-model="selectedFieldTab5" class="datasource-dropdown">
+              <option value="">All Fields</option>
+              <option v-for="field in availableFieldsTab5" :key="field" :value="field">{{ field }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="calculation-block" v-for="dataSource in filteredTab5DataWithDS">
+          <p class="calculation-dataSource">{{ dataSource.dsName }}</p>
+
+          <div v-if="dataSource.calculated.length > 0" class="calculation-field-list">
+            <p><b>Calculated Fields:</b></p>
+
+            <div v-for="field in dataSource.calculated" :key="field.name" class="calculation-field-item">
+              <div class="calculation-field-container" :class="field.used ? 'field-used' : 'field-unused'">
+
+                <button class="copy-code-btn" @click="copyToClipboard((fieldMap.find(fm => fm.dsName === dataSource.dsName)?.fields.find(f => f.name === field.name)?.calc) || field.formula)">
+                  <span class="copy-icon">📋</span>
+                </button>
+
+                <div class="calculation-field-details">
+                  <p class="calculation-field-name">
+                    <strong>{{ field.name }}:</strong>
+                    <span v-if="!field.used" class="badge-unused">unused</span>
+                  </p>
+                  <p class="calculation-field-formula">{{ (fieldMap.find(fm => fm.dsName === dataSource.dsName)?.fields.find(f => f.name === field.name)?.calc) || field.convertedFormula || field.formula }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="currentTab === 6" class="tab-content tab-6">
+        <div class="tab-header">
+          <h2 class="tab-header-title">
+            <span class="tab-header-icon">📋</span>
+            Workbook Overview
+          </h2>
+          <p class="tab-header-description">
+            Complete list of all worksheets and dashboards in your Tableau workbook.
+          </p>
+        </div>
+
+      <!-- Dashboards Section -->
+      <div class="tab-6__section">
+        <h5 class="tab-6__section-heading">Dashboards</h5>
+        <ul class="tab-6__list">
+          <li 
+            class="tab-6__item dashboard" 
+            v-for="(ws, index) in getUniqueList('dashboard')" 
+            :key="index">
+            <div class="tab-6__item-header">
+              <i class="fas fa-columns tab-6__icon"></i>
+              <div class="tab-6__item-name">{{ ws.name }}</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Worksheets Section -->
+      <div class="tab-6__section">
+        <h5 class="tab-6__section-heading">Worksheets</h5>
+        <ul class="tab-6__list">
+          <li 
+            class="tab-6__item" 
+            v-for="(ws, index) in getUniqueList('worksheet')" 
+            :key="index">
+            <div class="tab-6__item-header">
+              <i class="fas fa-table tab-6__icon"></i>
+              <div class="tab-6__item-name">{{ ws.name }}</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      </div>
+
+      <!-- Tab 7: Fields and Dependencies -->
+      <div v-if="currentTab === 7" class="tab-content tab_7-content">
+        <div class="tab-header">
+          <h2 class="tab-header-title">
+            <span class="tab-header-icon">🔗</span>
+            Field Dependencies
+          </h2>
+          <p class="tab-header-description">
+            Understand which fields are used in calculated field formulas and their dependency relationships.
+          </p>
+        </div>
+        
+        <div class="filter-controls" style="margin-bottom: var(--spacing-md);">
+          <button 
+            :class="['btn', 'btn-sm', tab7ShowUsed ? 'btn-primary' : 'btn-secondary']" 
+            @click="tab7ShowUsed = !tab7ShowUsed">
+            {{ tab7ShowUsed ? '✓' : '' }} Used Fields
+          </button>
+          <button 
+            :class="['btn', 'btn-sm', tab7ShowUnused ? 'btn-primary' : 'btn-secondary']" 
+            @click="tab7ShowUnused = !tab7ShowUnused">
+            {{ tab7ShowUnused ? '✓' : '' }} Unused Fields
+          </button>
+        </div>
+        
+        <div class="datasource-filter">
+          <div class="filter-group">
+            <label for="dsFilterTab7">Filter by Data Source:</label>
+            <select id="dsFilterTab7" v-model="selectedDatasourceTab7" class="datasource-dropdown">
+              <option value="">All Data Sources</option>
+              <option v-for="ds in availableDataSources" :key="ds" :value="ds">{{ ds }}</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label for="fieldFilterTab7">Filter by Field Name:</label>
+            <select id="fieldFilterTab7" v-model="selectedFieldTab7" class="datasource-dropdown">
+              <option value="">All Fields</option>
+              <option v-for="field in availableFieldsTab7" :key="field" :value="field">{{ field }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="tab_7-list">
+          <div class="tab_7-data-source" v-for="(ds, index) in filteredTab7DataWithDS" :key="index">
+
+            <!-- Data Source Name -->
+            <div class="tab_7-ds-name-wrapper">
+              <strong class="tab_7-ds-name">{{ ds.dsName }}</strong>
+            </div>
+
+            <!-- Independent Calculations Section -->
+            <div class="tab_7-section">
+              <h5 class="tab_7-section-heading">Independent Calculations</h5>
+              <div class="tab_7-fields-grid">
+                <div class="tab_7-fields-column">
+                  <ul class="tab_7-fields-list">
+                    <li v-for="(field, i) in getIndependentCalculations(ds.calculated)" :key="i" 
+                        class="tab_7-field-item" :class="field.used ? 'field-used' : 'field-unused'">
+                      <div class="tab_7-field-name">
+                        {{ field.name }}
+                        <span v-if="!field.used" class="badge-unused">unused</span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dependent Calculations Section -->
+            <div class="tab_7-section">
+              <h5 class="tab_7-section-heading">Dependent Calculations</h5>
+              <div class="tab_7-fields-grid">
+                <div class="tab_7-fields-column">
+                  <ul class="tab_7-fields-list">
+                    <li v-for="(field, i) in getDependentCalculations(ds.calculated)" :key="i" 
+                        class="tab_7-field-item tab_7-dependant" :class="field.used ? 'field-used' : 'field-unused'">
+                      <div class="tab_7-field-name">
+                        {{ field.name }}
+                        <span v-if="!field.used" class="badge-unused">unused</span>
+                      </div>
+                      <div class="tab_7-dependencies">
+                        <ul class="tab_7-dependencies-list">
+                          <li v-for="(dep, j) in getConvertedDependencies(ds.dsName, field.name)" :key="j" class="tab_7-dependency-item">{{ dep }}</li>
+                        </ul>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tab 10: Field Impact Analysis -->
+      <div v-if="currentTab === 10" class="tab-content tab_10-content">
+        <div class="tab-header">
+          <h2 class="tab-header-title">
+            <span class="tab-header-icon">💡</span>
+            Field Impact Analysis
+          </h2>
+          <p class="tab-header-description">
+            Discover which calculated fields depend on each base field - shows the full impact chain of every field in your workbook.
+          </p>
+        </div>
+        
+        <div class="filter-controls-row">
+          <div class="filter-group">
+            <label class="filter-group-label">Usage:</label>
+            <button 
+              :class="['btn', 'btn-sm', tab10ShowUsed ? 'btn-primary' : 'btn-secondary']" 
+              @click="tab10ShowUsed = !tab10ShowUsed">
+              {{ tab10ShowUsed ? '✓' : '' }} Used Fields
+            </button>
+            <button 
+              :class="['btn', 'btn-sm', tab10ShowUnused ? 'btn-primary' : 'btn-secondary']" 
+              @click="tab10ShowUnused = !tab10ShowUnused">
+              {{ tab10ShowUnused ? '✓' : '' }} Unused Fields
+            </button>
+          </div>
+          
+          <div class="filter-group">
+            <label class="filter-group-label">Type:</label>
+            <button 
+              :class="['btn', 'btn-sm', tab10ShowDatasource ? 'btn-primary' : 'btn-secondary']" 
+              @click="tab10ShowDatasource = !tab10ShowDatasource">
+              {{ tab10ShowDatasource ? '✓' : '' }} Datasource Fields
+            </button>
+            <button 
+              :class="['btn', 'btn-sm', tab10ShowCalculated ? 'btn-primary' : 'btn-secondary']" 
+              @click="tab10ShowCalculated = !tab10ShowCalculated">
+              {{ tab10ShowCalculated ? '✓' : '' }} Calculated Fields
+            </button>
+          </div>
+          
+          <div class="filter-group">
+            <label class="filter-group-label">Impact:</label>
+            <button 
+              :class="['btn', 'btn-sm', tab10ShowWithImpact ? 'btn-primary' : 'btn-secondary']" 
+              @click="tab10ShowWithImpact = !tab10ShowWithImpact">
+              {{ tab10ShowWithImpact ? '✓' : '' }} Has Dependencies
+            </button>
+            <button 
+              :class="['btn', 'btn-sm', tab10ShowNoImpact ? 'btn-primary' : 'btn-secondary']" 
+              @click="tab10ShowNoImpact = !tab10ShowNoImpact">
+              {{ tab10ShowNoImpact ? '✓' : '' }} No Dependencies
+            </button>
+          </div>
+        </div>
+        
+        <div class="datasource-filter">
+          <div class="filter-group">
+            <label for="dsFilterTab10">Filter by Data Source:</label>
+            <select id="dsFilterTab10" v-model="selectedDatasourceTab10" class="datasource-dropdown">
+              <option value="">All Data Sources</option>
+              <option v-for="ds in availableDataSources" :key="ds" :value="ds">{{ ds }}</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label for="fieldFilterTab10">Filter by Field Name:</label>
+            <select id="fieldFilterTab10" v-model="selectedFieldTab10" class="datasource-dropdown">
+              <option value="">All Fields</option>
+              <option v-for="field in availableFieldsTab10" :key="field" :value="field">{{ field }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="tab_10-list">
+          <div class="tab_10-data-source" v-for="(ds, index) in filteredFieldImpactAnalysis" :key="index">
+
+            <!-- Data Source Name -->
+            <div class="tab_10-ds-name-wrapper">
+              <strong class="tab_10-ds-name">{{ ds.dsName }}</strong>
+            </div>
+
+            <!-- Datasource Fields Section -->
+            <div class="tab_10-section" v-if="ds.fields.filter(f => !f.isCalculated).length > 0">
+              <div class="tab_10-section-header">
+                <span class="section-icon">📋</span>
+                <h3 class="tab_10-section-title">Datasource Fields</h3>
+                <span class="section-count">{{ ds.fields.filter(f => !f.isCalculated).length }}</span>
+              </div>
+              
+              <div class="tab_10-impact-grid">
+                <div class="tab_10-impact-card" 
+                     v-for="(field, i) in ds.fields.filter(f => !f.isCalculated)" 
+                     :key="'ds-' + i"
+                     :class="{'has-impacts': field.impacts.length > 0}">
+                  
+                  <!-- Field Header -->
+                  <div class="tab_10-field-header">
+                    <div class="tab_10-field-info">
+                      <span class="tab_10-field-name" :class="field.used ? 'field-used' : 'field-unused'">
+                        {{ field.name }}
+                      </span>
+                      <span v-if="!field.used" class="badge-unused">Unused</span>
+                    </div>
+                    <div class="tab_10-impact-count" v-if="field.impacts.length > 0">
+                      <span class="impact-badge">{{ field.impacts.length }} dependent{{ field.impacts.length > 1 ? 's' : '' }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Dependent Calculations -->
+                  <div class="tab_10-impacts" v-if="field.impacts.length > 0">
+                    <div class="tab_10-impacts-label">Used in:</div>
+                    <ul class="tab_10-impacts-list">
+                      <li v-for="(impact, j) in field.impacts" :key="j" class="tab_10-impact-item" :class="impact.used ? 'impact-used' : 'impact-unused'">
+                        <span class="impact-arrow">→</span>
+                        <span class="impact-name">{{ impact.name }}</span>
+                        <span v-if="!impact.used" class="impact-unused-badge">unused</span>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                </div>
+              </div>
+            </div>
+
+            <!-- Calculated Fields Section -->
+            <div class="tab_10-section" v-if="ds.fields.filter(f => f.isCalculated).length > 0">
+              <div class="tab_10-section-header">
+                <span class="section-icon">🧮</span>
+                <h3 class="tab_10-section-title">Calculated Fields</h3>
+                <span class="section-count">{{ ds.fields.filter(f => f.isCalculated).length }}</span>
+              </div>
+              
+              <div class="tab_10-impact-grid">
+                <div class="tab_10-impact-card" 
+                     v-for="(field, i) in ds.fields.filter(f => f.isCalculated)" 
+                     :key="'calc-' + i"
+                     :class="{'has-impacts': field.impacts.length > 0, 'is-calculated': true}">
+                  
+                  <!-- Field Header -->
+                  <div class="tab_10-field-header">
+                    <div class="tab_10-field-info">
+                      <span class="tab_10-field-name" :class="field.used ? 'field-used' : 'field-unused'">
+                        {{ field.name }}
+                      </span>
+                      <span v-if="!field.used" class="badge-unused">Unused</span>
+                    </div>
+                    <div class="tab_10-impact-count" v-if="field.impacts.length > 0">
+                      <span class="impact-badge">{{ field.impacts.length }} dependent{{ field.impacts.length > 1 ? 's' : '' }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Dependent Calculations -->
+                  <div class="tab_10-impacts" v-if="field.impacts.length > 0">
+                    <div class="tab_10-impacts-label">Used in:</div>
+                    <ul class="tab_10-impacts-list">
+                      <li v-for="(impact, j) in field.impacts" :key="j" class="tab_10-impact-item" :class="impact.used ? 'impact-used' : 'impact-unused'">
+                        <span class="impact-arrow">→</span>
+                        <span class="impact-name">{{ impact.name }}</span>
+                        <span v-if="!impact.used" class="impact-unused-badge">unused</span>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tab 8: Unused Fields -->
+      <div v-if="currentTab === 8" class="card" v-cloak>
+        <div class="tab-header">
+          <h2 class="tab-header-title">
+            <span class="tab-header-icon">⚠️</span>
+            Unused Fields Report
+          </h2>
+          <p class="tab-header-description">
+            Identify fields that aren't used in any worksheets, dashboards, or calculations - candidates for cleanup.
+          </p>
+        </div>
+        
+        <div class="datasource-filter">
+          <label for="dsFilterTab8">Filter by Data Source:</label>
+          <select id="dsFilterTab8" v-model="selectedDatasourceTab8" class="datasource-dropdown">
+            <option value="">All Data Sources</option>
+            <option v-for="ds in availableDataSources" :key="ds" :value="ds">{{ ds }}</option>
+          </select>
+        </div>
+        
+        <div v-if="Object.keys(filteredUnusedFieldsTab8).length === 0" class="unused-empty-state">
+          <div class="empty-icon">🎉</div>
+          <h3 class="empty-title">Excellent Work!</h3>
+          <p class="empty-message">All fields in your workbook are being used efficiently.</p>
+        </div>
+        
+        <div v-else class="unused-fields-container">
+          <div v-for="(fields, dsName) in filteredUnusedFieldsTab8" :key="dsName" class="unused-datasource-card">
+            <div class="unused-card-header">
+              <h3 class="unused-ds-title">{{ dsName }}</h3>
+              <span class="unused-count-badge">{{ fields.length }} unused field{{ fields.length !== 1 ? 's' : '' }}</span>
+            </div>
+            
+            <div class="unused-fields-grid">
+              <div v-for="(field, index) in fields" :key="index" class="unused-field-chip">
+                <span class="field-text">{{ field }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+<!-- Tab 6: Worksheets and Dashboards -->
+<!-- <div v-show="currentTab === 6" class="tab-content tab-6">
+  <h4 class="tab-6__heading">Worksheets and Dashboards</h4>
+  <div class="tab-6__list">
+    <div 
+      class="tab-6__item" 
+      v-for="(ws, index) in worksheetList" 
+      :key="index">
+      <div class="tab-6__item-header">
+        <i :class="ws.type === 'worksheet' ? 'fas fa-table' : 'fas fa-columns'" class="tab-6__icon"></i>
+        <div class="tab-6__item-name">{{ ws.name }}</div>
+      </div>
+      <div class="tab-6__item-type">Type: {{ ws.type }}</div>
+    </div>
+  </div>
+</div> -->
+
+
+
+<!--
+Tab 7: Fields and Dependencies
+<div v-show="currentTab === 7" class="tab-content tab-7">
+  <h4 class="tab-7__heading">Fields and Dependent Fields</h4>
+  <div class="tab-7__list">
+    <div 
+      class="tab-7__data-source" 
+      v-for="(ds, index) in dataSourceFields" 
+      :key="index">
+      <strong class="tab-7__ds-name">{{ ds.dsName }}</strong>
+      <div class="tab-7__fields">
+        Original Fields Section
+        <div class="tab-7__section">
+          <strong>Original Fields:</strong>
+          <ul class="tab-7__fields-list">
+            <li v-for="(field, i) in ds.original" :key="i" class="tab-7__field-item">
+              {{ field }}
+            </li>
+          </ul>
+        </div>
+
+        Calculated Fields Section
+        <div class="tab-7__section">
+          <strong>Calculated Fields:</strong>
+          <ul class="tab-7__fields-list">
+            <li v-for="(field, i) in ds.calculated" :key="i" class="tab-7__field-item">
+              <span>{{ field.name }} (depends on: </span>
+              <ul class="tab-7__dependencies-list">
+                <li v-for="(dep, j) in field.dependencies" :key="j">{{ dep }}</li>
+              </ul>)
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> -->
+
+      <!-- Tab 9: Field Usage Analytics -->
+      <div v-if="currentTab === 9" class="card" v-cloak>
+        <div class="tab-header">
+          <h2 class="tab-header-title">
+            <span class="tab-header-icon">📈</span>
+            Field Usage Analytics
+          </h2>
+          <p class="tab-header-description">
+            Analyze which fields are most frequently used across your workbook and where they appear.
+          </p>
+        </div>
+        
+
+        <div class="analytics-container">
+          <div v-for="(field, idx) in fieldUsageAnalytics.slice(0, 50)" :key="idx" class="analytics-item">
+            <div class="analytics-rank">{{ idx + 1 }}</div>
+            <div class="analytics-content">
+              <div class="analytics-field-name">
+                {{ field.fieldName }}
+                <span class="analytics-badge" :class="field.isCalculated ? 'badge-calc' : 'badge-original'">
+                  {{ field.isCalculated ? 'Calculated' : 'Original' }}
+                </span>
+              </div>
+              <div class="analytics-meta">
+                <span class="analytics-ds">{{ field.dataSource }}</span>
+                <span class="analytics-usage">Used in {{ field.usageCount }} worksheet{{ field.usageCount !== 1 ? 's' : '' }}</span>
+              </div>
+            </div>
+            <div class="analytics-count" :class="getUsageClass(field.usageCount)">
+              {{ field.usageCount }}
+            </div>
+          </div>
+          
+          <div v-if="fieldUsageAnalytics.length > 50" class="analytics-more">
+            Showing top 50 of {{ fieldUsageAnalytics.length }} fields
+          </div>
+        </div>
+      </div>
+
+      <!-- About Modal -->
+      <div v-if="showAboutModal" class="modal-overlay" @click="showAboutModal = false" v-cloak>
+        <div class="modal-content about-modal" @click.stop>
+          <button class="modal-close" @click="showAboutModal = false" title="Close">✕</button>
+          
+          <div class="about-header">
+            <h2 class="about-title">About Tableau DeepDive</h2>
+          </div>
+          
+          <div class="about-content">
+            <!-- What is Tableau DeepDive -->
+            <div class="about-section-card">
+              <h3 class="section-title">🌊 What is Tableau DeepDive?</h3>
+              <p class="section-text">
+                Tableau DeepDive is a powerful, browser-based workbook analysis tool designed to help Tableau developers 
+                and analysts understand, optimize, and document their workbooks. It provides comprehensive insights into 
+                data source connections, field usage patterns, calculated field dependencies, and workbook complexity—all 
+                without requiring any server-side processing or data uploads.
+              </p>
+            </div>
+
+            <!-- Key Features -->
+            <div class="about-section-card">
+              <h3 class="section-title">✨ Key Features</h3>
+              <ul class="features-list">
+                <li><strong>📊 Comprehensive Analytics:</strong> Track field usage across worksheets, dashboards, and data sources with detailed statistics</li>
+                <li><strong>📈 Real-time Statistics:</strong> View workbook metrics including total fields, calculated fields, parameters, and unused field percentages</li>
+                <li><strong>📋 Workbook Overview:</strong> Complete list of all worksheets and dashboards in one centralized view</li>
+                <li><strong>🗂️ Data Source Mapping:</strong> Visualize which worksheets and dashboards connect to each data source</li>
+                <li><strong>🔍 Field Usage Tracker:</strong> Discover where each field is used across your worksheets with detailed tracking</li>
+                <li><strong>📝 All Fields Inventory:</strong> Browse all original and calculated fields with used/unused status indicators</li>
+                <li><strong>🧮 Calculation Formulas:</strong> View all calculated field formulas with readable field names (not internal IDs) and copy-to-clipboard functionality</li>
+                <li><strong>🔗 Field Dependencies:</strong> Understand dependency relationships between calculated fields and their base fields</li>
+                <li><strong>💡 Impact Analysis:</strong> Discover which calculated fields depend on each base field to understand modification impact</li>
+                <li><strong>⚠️ Unused Field Detection:</strong> Identify unused fields, calculated fields, and parameters for cleanup and optimization</li>
+                <li><strong>📊 Field Usage Analytics:</strong> Analyze which fields are most frequently used across your workbook</li>
+                <li><strong>🎯 Parameter Tracking:</strong> Comprehensive parameter usage detection including direct worksheet usage and calculation references</li>
+                <li><strong>💾 Excel Export:</strong> Export calculated fields with formulas and dependencies to Excel for documentation</li>
+                <li><strong>🔧 Advanced Filtering:</strong> Filter by data source, used/unused status, field type, and impact level</li>
+                <li><strong>📋 Formula Conversion:</strong> Automatically converts internal IDs to readable field names/captions in all calculations</li>
+                <li><strong>🔒 100% Client-Side:</strong> All processing happens in your browser—your data never leaves your machine</li>
+              </ul>
+            </div>
+
+            <!-- Common Use Cases -->
+            <div class="about-section-card">
+              <h3 class="section-title">💡 Common Use Cases</h3>
+              <ul class="use-cases-list">
+                <li><strong>Workbook Optimization:</strong> Identify and remove unused fields, calculated fields, and parameters to improve performance and reduce file size</li>
+                <li><strong>Impact Analysis:</strong> Understand which calculated fields depend on a base field before making modifications—see the full dependency chain</li>
+                <li><strong>Field Cleanup:</strong> Find unused parameters and fields that can be safely removed without affecting any worksheets or calculations</li>
+                <li><strong>Formula Auditing:</strong> Review all calculated field formulas with readable field names instead of cryptic internal IDs</li>
+                <li><strong>Dependency Mapping:</strong> Visualize which calculated fields are independent vs dependent, and understand their relationships</li>
+                <li><strong>Documentation:</strong> Generate comprehensive Excel reports of all data sources, fields, calculations, and dependencies for project documentation</li>
+                <li><strong>Code Review:</strong> Review calculated field logic and identify overly complex calculations that need refactoring</li>
+                <li><strong>Knowledge Transfer:</strong> Help new team members understand existing workbook structure, dependencies, and field usage patterns</li>
+                <li><strong>Migration Planning:</strong> Analyze workbook complexity and field relationships before migrating to new versions or environments</li>
+                <li><strong>Performance Troubleshooting:</strong> Identify complex nested calculations and understand which fields are heavily used across multiple worksheets</li>
+                <li><strong>Best Practices Compliance:</strong> Ensure workbooks follow organizational standards for naming conventions, field usage, and calculation structure</li>
+                <li><strong>Workbook Health Check:</strong> Get instant statistics on total fields, unused percentages, and parameter usage to assess workbook health</li>
+              </ul>
+            </div>
+
+            <!-- Security and Privacy -->
+            <div class="about-section-card security-card">
+              <h3 class="section-title">🔒 Security and Privacy</h3>
+              <p class="section-text">
+                Your data security is our top priority. Tableau DeepDive operates entirely within your web browser using 
+                client-side JavaScript. When you upload a Tableau workbook (.twb or .twbx file):
+              </p>
+              <ul class="security-list">
+                <li>✅ <strong>No Server Upload:</strong> Files are never uploaded to any server or cloud service</li>
+                <li>✅ <strong>Local Processing:</strong> All analysis is performed locally in your browser</li>
+                <li>✅ <strong>No Data Storage:</strong> No workbook data is stored, cached, or transmitted</li>
+                <li>✅ <strong>No External Calls:</strong> No data is sent to external services or third parties</li>
+                <li>✅ <strong>Open Source:</strong> Code is transparent and can be reviewed for security compliance</li>
+              </ul>
+              <p class="section-text">
+                <em>You maintain complete control over your workbook files at all times.</em>
+              </p>
+            </div>
+
+            <!-- Developer Information -->
+            <div class="about-section-card developer-card">
+              <h3 class="section-title">👨‍💻 Developer Information</h3>
+              <div class="developer-info-grid">
+                <div class="developer-avatar">
+                  <img src="logos/devp.jpg" alt="Ravindra Punekar" class="developer-photo">
+                </div>
+                
+                <div class="developer-details-column">
+                  <h4 class="developer-name">Ravindra Punekar</h4>
+                  <p class="developer-bio">"Curious to learn, Hungry to Build."</p>
+                  
+                  <div class="developer-info-items">
+                    <div class="info-item">
+                      <span class="info-icon">🎓</span>
+                      <div>
+                        <strong>Education:</strong> B.Tech
+                      </div>
+                    </div>
+                    
+                    <div class="info-item">
+                      <span class="info-icon">💼</span>
+                      <div>
+                        <strong>Position:</strong> Data Engineer
+                      </div>
+                    </div>
+
+                    <div class="info-item">
+                      <span class="info-icon">🚀</span>
+                      <div>
+                        <strong>Passion:</strong> Building tools that simplify complex data workflows and empower analysts
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="coming-soon">
+                <p class="coming-soon-text">
+                  <span class="coming-soon-badge">🚀 Coming Soon</span>
+                  More features are on the way! Stay tuned for updates.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      </div>
+      <!-- End Tab Content Wrapper -->
+
+    </div>
+  </section>
+  
+  <script>
+  function getUsageClass(count) {
+    if (count >= 10) return 'usage-high';
+    if (count >= 5) return 'usage-medium';
+    if (count >= 1) return 'usage-low';
+    return 'usage-none';
+  }
+  </script>
+
+  <style>
+    .tab-description {
+      font-size: 14px;
+      color: #555;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</body>
+
+</html>
+
