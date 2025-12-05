@@ -14,7 +14,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <script src="./script.js" defer></script>
-  <!-- <script src="./script.js" defer></script> -->
 </head>
 
 <body>
@@ -89,6 +88,14 @@
             <div class="stat-value">{{ workbookStats.complexCalculations.length }}</div>
             <div class="stat-label">Complex Calcs</div>
           </div>
+          <div class="stat-card info">
+            <div class="stat-value">{{ workbookStats.totalFieldsWithAliases }}</div>
+            <div class="stat-label">Fields with Aliases</div>
+          </div>
+          <div class="stat-card info">
+            <div class="stat-value">{{ workbookStats.aliasPercentage }}%</div>
+            <div class="stat-label">Alias Coverage</div>
+          </div>
         </div>
         
         <!-- Most Used Fields -->
@@ -145,6 +152,9 @@
             </li>
             <li :class="currentTab === 10 ? 'is-active' : ''" role="presentation">
               <a @click="currentTab = 10" role="tab" :aria-selected="currentTab === 10" tabindex="0" @keydown.enter="currentTab = 10" @keydown.space.prevent="currentTab = 10"><span>💡 Impact Analysis</span></a>
+            </li>
+            <li :class="currentTab === 11 ? 'is-active' : ''" role="presentation">
+              <a @click="currentTab = 11" role="tab" :aria-selected="currentTab === 11" tabindex="0" @keydown.enter="currentTab = 11" @keydown.space.prevent="currentTab = 11"><span>🏷️ Field Aliases</span></a>
             </li>
             <li :class="currentTab === 8 ? 'is-active' : ''" role="presentation">
               <a @click="currentTab = 8" role="tab" :aria-selected="currentTab === 8" tabindex="0" @keydown.enter="currentTab = 8" @keydown.space.prevent="currentTab = 8"><span>⚠️ Unused Fields</span></a>
@@ -790,6 +800,87 @@
         </div>
       </div>
       
+      <!-- Tab 11: Field Aliases -->
+      <div v-if="currentTab === 11" class="card" v-cloak>
+        <div class="tab-header">
+          <h2 class="tab-header-title">
+            <span class="tab-header-icon">🏷️</span>
+            Field Aliases / Captions
+          </h2>
+          <p class="tab-header-description">
+            View the mapping from original datasource field names to their aliases/captions.
+          </p>
+        </div>
+        
+        <div class="filter-controls" style="margin-bottom: var(--spacing-md);">
+          <button 
+            :class="['btn', 'btn-sm', tab11ShowWithAlias ? 'btn-primary' : 'btn-secondary']" 
+            @click="tab11ShowWithAlias = !tab11ShowWithAlias">
+            {{ tab11ShowWithAlias ? '✓' : '' }} With Alias
+          </button>
+          <button 
+            :class="['btn', 'btn-sm', tab11ShowWithoutAlias ? 'btn-primary' : 'btn-secondary']" 
+            @click="tab11ShowWithoutAlias = !tab11ShowWithoutAlias">
+            {{ tab11ShowWithoutAlias ? '✓' : '' }} Without Alias
+          </button>
+        </div>
+        
+        <div class="datasource-filter">
+          <div class="filter-group">
+            <label for="dsFilterTab11">Filter by Data Source:</label>
+            <select id="dsFilterTab11" v-model="selectedDatasourceTab11" class="datasource-dropdown">
+              <option value="">All Data Sources</option>
+              <option v-for="ds in availableDataSources" :key="ds" :value="ds">{{ ds }}</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label for="fieldFilterTab11">Filter by Field Name:</label>
+            <select id="fieldFilterTab11" v-model="selectedFieldTab11" class="datasource-dropdown">
+              <option value="">All Fields</option>
+              <option v-for="field in availableFieldsTab11" :key="field" :value="field">{{ field }}</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="field-names-container">
+          <div class="field-names-datasource-card" v-for="ds in filteredFieldAliasMapping" :key="ds.dsName">
+            <div class="field-names-card-header">
+              <div class="ds-header-left">
+                <span class="ds-icon">🗄️</span>
+                <h3 class="ds-title">{{ ds.dsName }}</h3>
+              </div>
+              <div class="ds-stats">
+                <span class="stat-badge stat-total">{{ ds.fields.length }} field{{ ds.fields.length !== 1 ? 's' : '' }}</span>
+              </div>
+            </div>
+            
+            <div class="field-names-card-body">
+              <div class="alias-mapping-list">
+                <div class="alias-list-header">
+                  <div class="header-left">Original Field Name</div>
+                  <div class="header-right">Alias / Caption</div>
+                </div>
+                <div v-for="(field, idx) in ds.fields" :key="idx" 
+                     class="alias-list-item" 
+                     :class="{'has-alias': field.alias && field.alias.trim() !== '', 'no-alias-item': !field.alias || field.alias.trim() === ''}">
+                  <div class="alias-list-left">
+                    <span class="field-type-icon">📄</span>
+                    <div class="field-info">
+                      <code class="field-original">{{ field.originalName }}</code>
+                    </div>
+                  </div>
+                  <div class="alias-list-right">
+                    <span v-if="field.alias && field.alias.trim() !== ''" class="field-alias-value">{{ field.alias }}</span>
+                    <span v-else class="no-alias-badge"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- Tab 8: Unused Fields -->
       <div v-if="currentTab === 8" class="card" v-cloak>
         <div class="tab-header">
@@ -962,6 +1053,7 @@ Tab 7: Fields and Dependencies
                 <li><strong>🧮 Calculation Formulas:</strong> View all calculated field formulas with readable field names (not internal IDs) and copy-to-clipboard functionality</li>
                 <li><strong>🔗 Field Dependencies:</strong> Understand dependency relationships between calculated fields and their base fields</li>
                 <li><strong>💡 Impact Analysis:</strong> Discover which calculated fields depend on each base field to understand modification impact</li>
+                <li><strong>🏷️ Field Aliases:</strong> View and analyze field name mappings between original datasource names and their custom aliases/captions with filtering options</li>
                 <li><strong>⚠️ Unused Field Detection:</strong> Identify unused fields, calculated fields, and parameters for cleanup and optimization</li>
                 <li><strong>📊 Field Usage Analytics:</strong> Analyze which fields are most frequently used across your workbook</li>
                 <li><strong>🎯 Parameter Tracking:</strong> Comprehensive parameter usage detection including direct worksheet usage and calculation references</li>
@@ -1057,6 +1149,47 @@ Tab 7: Fields and Dependencies
           </div>
         </div>
       </div>
+      
+      <!-- Welcome Popup for New Feature -->
+      <div v-if="showWelcomePopup" class="modal-overlay welcome-overlay" @click="showWelcomePopup = false" v-cloak>
+        <div class="modal-content welcome-popup" @click.stop>
+          <button class="modal-close" @click="showWelcomePopup = false" title="Close">✕</button>
+          
+          <div class="welcome-header">
+            <div class="welcome-icon">🎉</div>
+            <h2 class="welcome-title">New Feature: Field Aliases!</h2>
+          </div>
+          
+          <div class="welcome-content">
+            <p class="welcome-intro">
+              We've added a new feature to help you understand field naming in your workbooks!
+            </p>
+            
+            <div class="feature-highlight">
+              <div class="feature-icon">🏷️</div>
+              <div class="feature-details">
+                <h3 class="feature-title">Field Aliases / Captions</h3>
+                <p class="feature-description">
+                  View complete mapping between original datasource field names and their custom aliases or captions. 
+                  Quickly identify which fields have been renamed and understand your naming conventions at a glance.
+                </p>
+              </div>
+            </div>
+            
+            <!-- <div class="feature-benefits">
+              <h4 class="benefits-title">What you can do:</h4>
+              <ul class="benefits-list">
+                <li>✅ See all fields with their original → alias mappings</li>
+                <li>✅ Filter by datasource, field name, or alias status</li>
+                <li>✅ Identify fields that still use original names</li>
+                <li>✅ Visual indicators for fields with/without aliases</li>
+                <li>✅ Track alias coverage percentage in statistics</li>
+              </ul>
+            </div> -->
+            
+          </div>
+        </div>
+      </div>
 
       </div>
       <!-- End Tab Content Wrapper -->
@@ -1065,6 +1198,7 @@ Tab 7: Fields and Dependencies
   </section>
   
   <script>
+  // Helper function for usage class (add to methods if needed in Vue)
   function getUsageClass(count) {
     if (count >= 10) return 'usage-high';
     if (count >= 5) return 'usage-medium';
@@ -1084,4 +1218,3 @@ Tab 7: Fields and Dependencies
 </body>
 
 </html>
-
