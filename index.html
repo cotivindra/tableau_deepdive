@@ -12,7 +12,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
   <script src="./script.js" defer></script>
 </head>
 
@@ -29,7 +28,7 @@
             </p>
           </div>
           <div class="header-right">
-            <button class="btn btn-about" @click="showAboutModal = true" title="About">ℹ️ About</button>
+            <button class="btn btn-about" @click="showAboutModal = true" title="About">About</button>
           </div>
         </div>
       </div>
@@ -168,9 +167,8 @@
       
       <!-- Tab Content -->
       <div class="tab-content-wrapper">
-
       <div v-if="currentTab === 0" v-cloak>
-        <p class="tab-description">Made by Ravindra</p>
+        <p class="tab-description">Made by Ravindra Punekar</p>
         <p class="tab-description">New features Coming Soon...</p>
         <img :src="logos[currentLogoIndex]" alt="Logo" class="image-class">
       </div>
@@ -200,7 +198,7 @@
             <p><b>Dashboards - [{{dataSource.sheets.filter(sheet => sheet.type === 'dashboard').length}}]</b></p>
             <div class="tab-1__list">
               <div v-for="sheet in dataSource.sheets.filter(sheet => sheet.type === 'dashboard')" :key="sheet.name" class="tab-1__item">
-                <img class="tab-1__tabicon" :src="'https://cdn.glitch.global/945b8f26-7039-4242-b7b8-583646c92829/' + sheet.type + '.png'" />
+                <!-- <img class="tab-1__tabicon" :src="'https://cdn.glitch.global/945b8f26-7039-4242-b7b8-583646c92829/' + sheet.type + '.png'" /> -->
                 <span>{{ sheet.name }}</span>
               </div>
             </div>
@@ -214,8 +212,26 @@
             </div>
           </div>
         </div>
+
+      <!-- Parameters Section -->
+      <div v-if="allParameters && allParameters.length > 0 && (!selectedDatasourceTab1 || selectedDatasourceTab1 === 'Parameters')" class="tab-1__datasource">
+        <p class="tab-1__datasource-name">⚙️ Parameters - [{{ allParameters.length }}]
+          <span style="font-size:0.8em; font-weight:normal; margin-left:8px;">(✅ {{ allParameters.filter(p => p.used).length }} used
+            <span v-if="allParameters.filter(p => !p.used).length > 0">, ⚠️ {{ allParameters.filter(p => !p.used).length }} unused</span>)
+          </span>
+        </p>
+        <div class="tab-1__section">
+          <div class="tab-1__list">
+            <div v-for="param in allParameters" :key="param.name" class="tab-1__item">
+              <span :class="param.used ? 'field-used' : 'field-unused'">{{ param.name }}</span>
+              <span v-if="!param.used" class="badge-unused" style="margin-left:6px;">unused</span>
+            </div>
+          </div>
+        </div>
+      </div>      
       </div>
-      
+      <!-- End Tab 1 -->
+
       <div v-if="currentTab === 2" class="block" v-cloak>
         <div class="tab-header">
           <h2 class="tab-header-title">
@@ -390,7 +406,7 @@
                   <h4 class="section-title">Original Fields ({{ fields.original.length }})</h4>
                 </div>
                 <div class="fields-grid">
-                  <div v-for="(field, idx) in fields.original" :key="field && field.name ? field.name : idx" 
+                  <div v-for="(field, idx) in fields.original" :key="field && field.name ? (field.name + '_' + idx) : idx" 
                        class="field-chip" :class="field && field.used ? 'chip-used' : 'chip-unused'">
                     <span class="chip-text">{{ field ? field.name : 'Unknown' }}</span>
                     <span v-if="field && !field.used" class="chip-badge">unused</span>
@@ -404,7 +420,7 @@
                   <h4 class="section-title">Calculated Fields ({{ fields.calculated.length }})</h4>
                 </div>
                 <div class="fields-grid">
-                  <div v-for="(field, idx) in fields.calculated" :key="field && field.name ? field.name : idx" 
+                  <div v-for="(field, idx) in fields.calculated" :key="field && field.name ? (field.name + '_' + idx) : idx" 
                        class="field-chip field-chip-calc" :class="field && field.used ? 'chip-used' : 'chip-unused'">
                     <span class="chip-text">{{ field ? field.name : 'Unknown' }}</span>
                     <span v-if="field && !field.used" class="chip-badge">unused</span>
@@ -463,6 +479,7 @@
             </select>
           </div>
         </div>
+
 
         <div class="calculation-block" v-for="dataSource in filteredTab5DataWithDS">
           <p class="calculation-dataSource">{{ dataSource.dsName }}</p>
@@ -578,6 +595,12 @@
         </div>
 
         <div class="tab_7-list">
+          <!-- Note when Parameters is selected (they have no calculated fields) -->
+          <div v-if="selectedDatasourceTab7 === 'Parameters'" class="empty-state-note" style="padding:16px; text-align:center; opacity:0.75;">
+            <span style="font-size:1.2em;">⚙️</span>
+            <p>Parameters do not have calculated field formulas.</p>
+            <p>They can appear as <strong>dependencies</strong> inside other datasources' calculations (shown with <span style="background:#6366f1;color:#fff;border-radius:4px;padding:1px 5px;font-size:0.85em;">⚙️ param</span> badge) and their impact is visible in the <strong>💡 Impact Analysis</strong> tab.</p>
+          </div>
           <div class="tab_7-data-source" v-for="(ds, index) in filteredTab7DataWithDS" :key="index">
 
             <!-- Data Source Name -->
@@ -617,7 +640,10 @@
                       </div>
                       <div class="tab_7-dependencies">
                         <ul class="tab_7-dependencies-list">
-                          <li v-for="(dep, j) in getConvertedDependencies(ds.dsName, field.name)" :key="j" class="tab_7-dependency-item">{{ dep }}</li>
+                          <li v-for="(dep, j) in getConvertedDependencies(ds.dsName, field.name)" :key="j" class="tab_7-dependency-item">
+                            {{ dep }}
+                            <span v-if="isParameter(dep)" class="badge-parameter" title="Parameter" style="font-size:0.75em; background:#6366f1; color:#fff; border-radius:4px; padding:1px 5px; margin-left:4px;">⚙️ param</span>
+                          </li>
                         </ul>
                       </div>
                     </li>
@@ -711,11 +737,11 @@
               <strong class="tab_10-ds-name">{{ ds.dsName }}</strong>
             </div>
 
-            <!-- Datasource Fields Section -->
+            <!-- Datasource Fields / Parameters Section -->
             <div class="tab_10-section" v-if="ds.fields.filter(f => !f.isCalculated).length > 0">
               <div class="tab_10-section-header">
-                <span class="section-icon">📋</span>
-                <h3 class="tab_10-section-title">Datasource Fields</h3>
+                <span class="section-icon">{{ ds.dsName === 'Parameters' ? '⚙️' : '📋' }}</span>
+                <h3 class="tab_10-section-title">{{ ds.dsName === 'Parameters' ? 'Parameters' : 'Datasource Fields' }}</h3>
                 <span class="section-count">{{ ds.fields.filter(f => !f.isCalculated).length }}</span>
               </div>
               
@@ -745,6 +771,7 @@
                       <li v-for="(impact, j) in field.impacts" :key="j" class="tab_10-impact-item" :class="impact.used ? 'impact-used' : 'impact-unused'">
                         <span class="impact-arrow">→</span>
                         <span class="impact-name">{{ impact.name }}</span>
+                        <span v-if="impact.dsName" class="impact-ds" style="font-size:0.8em; opacity:0.75; margin-left:4px;">({{ impact.dsName }})</span>
                         <span v-if="!impact.used" class="impact-unused-badge">unused</span>
                       </li>
                     </ul>
@@ -754,7 +781,7 @@
               </div>
             </div>
 
-            <!-- Calculated Fields Section -->
+            <!-- Calculated Fields Section (hidden for Parameters since they have none) -->
             <div class="tab_10-section" v-if="ds.fields.filter(f => f.isCalculated).length > 0">
               <div class="tab_10-section-header">
                 <span class="section-icon">🧮</span>
@@ -788,6 +815,7 @@
                       <li v-for="(impact, j) in field.impacts" :key="j" class="tab_10-impact-item" :class="impact.used ? 'impact-used' : 'impact-unused'">
                         <span class="impact-arrow">→</span>
                         <span class="impact-name">{{ impact.name }}</span>
+                        <span v-if="impact.dsName" class="impact-ds" style="font-size:0.8em; opacity:0.75; margin-left:4px;">({{ impact.dsName }})</span>
                         <span v-if="!impact.used" class="impact-unused-badge">unused</span>
                       </li>
                     </ul>
@@ -844,6 +872,12 @@
         </div>
         
         <div class="field-names-container">
+          <!-- Note when Parameters is selected in Tab 11 -->
+          <div v-if="selectedDatasourceTab11 === 'Parameters'" style="padding:20px; text-align:center; opacity:0.75;">
+            <span style="font-size:1.5em;">⚙️</span>
+            <p>Parameters do not have field aliases/captions.</p>
+            <p>To see parameter usage, check the <strong>🗂️ Data Sources</strong> or <strong>💡 Impact Analysis</strong> tabs.</p>
+          </div>
           <div class="field-names-datasource-card" v-for="ds in filteredFieldAliasMapping" :key="ds.dsName">
             <div class="field-names-card-header">
               <div class="ds-header-left">
@@ -1023,129 +1057,223 @@ Tab 7: Fields and Dependencies
       <div v-if="showAboutModal" class="modal-overlay" @click="showAboutModal = false" v-cloak>
         <div class="modal-content about-modal" @click.stop>
           <button class="modal-close" @click="showAboutModal = false" title="Close">✕</button>
-          
-          <div class="about-header">
-            <h2 class="about-title">About Tableau DeepDive</h2>
+
+          <!-- Hero Header -->
+          <div class="about-hero">
+            <div class="about-hero-icon">🌊</div>
+            <div>
+              <span class="about-version-badge">v2.1</span>
+              <h2 class="about-title">Tableau DeepDive</h2>
+              <p class="about-tagline">Browser-based workbook analysis - zero uploads, 100% private.</p>
+            </div>
           </div>
-          
-          <div class="about-content">
-            <!-- What is Tableau DeepDive -->
+
+          <!-- Quick Stats Strip -->
+          <div class="about-stats-strip">
+            <div class="about-stat"><span class="about-stat-num">11</span><span class="about-stat-label">Analysis Tabs</span></div>
+            <div class="about-stat"><span class="about-stat-num">🔒</span><span class="about-stat-label">100% Client-Side</span></div>
+            <div class="about-stat"><span class="about-stat-num">.twb & .twbx</span><span class="about-stat-label">Support</span></div>
+            <div class="about-stat"><span class="about-stat-num">📊</span><span class="about-stat-label">Excel Export</span></div>
+          </div>
+
+          <div class="about-body">
+
+            <!-- What is it -->
             <div class="about-section-card">
-              <h3 class="section-title">🌊 What is Tableau DeepDive?</h3>
+              <h3 class="about-section-title">🌊 What is Tableau DeepDive?</h3>
               <p class="section-text">
-                Tableau DeepDive is a powerful, browser-based workbook analysis tool designed to help Tableau developers 
-                and analysts understand, optimize, and document their workbooks. It provides comprehensive insights into 
-                data source connections, field usage patterns, calculated field dependencies, and workbook complexity—all 
+                Tableau DeepDive is a powerful, browser-based workbook analysis tool designed to help Tableau developers
+                and analysts <strong>understand, optimize, and document</strong> their workbooks. It provides comprehensive insights into
+                data source connections, field usage patterns, calculated field dependencies, and workbook complexity-all
                 without requiring any server-side processing or data uploads.
               </p>
             </div>
 
-            <!-- Key Features -->
+            <!-- Key Features Grid -->
             <div class="about-section-card">
-              <h3 class="section-title">✨ Key Features</h3>
-              <ul class="features-list">
-                <li><strong>📊 Comprehensive Analytics:</strong> Track field usage across worksheets, dashboards, and data sources with detailed statistics</li>
-                <li><strong>📈 Real-time Statistics:</strong> View workbook metrics including total fields, calculated fields, parameters, and unused field percentages</li>
-                <li><strong>📋 Workbook Overview:</strong> Complete list of all worksheets and dashboards in one centralized view</li>
-                <li><strong>🗂️ Data Source Mapping:</strong> Visualize which worksheets and dashboards connect to each data source</li>
-                <li><strong>🔍 Field Usage Tracker:</strong> Discover where each field is used across your worksheets with detailed tracking</li>
-                <li><strong>📝 All Fields Inventory:</strong> Browse all original and calculated fields with used/unused status indicators</li>
-                <li><strong>🧮 Calculation Formulas:</strong> View all calculated field formulas with readable field names (not internal IDs) and copy-to-clipboard functionality</li>
-                <li><strong>🔗 Field Dependencies:</strong> Understand dependency relationships between calculated fields and their base fields</li>
-                <li><strong>💡 Impact Analysis:</strong> Discover which calculated fields depend on each base field to understand modification impact</li>
-                <li><strong>🏷️ Field Aliases:</strong> View and analyze field name mappings between original datasource names and their custom aliases/captions with filtering options</li>
-                <li><strong>⚠️ Unused Field Detection:</strong> Identify unused fields, calculated fields, and parameters for cleanup and optimization</li>
-                <li><strong>📊 Field Usage Analytics:</strong> Analyze which fields are most frequently used across your workbook</li>
-                <li><strong>🎯 Parameter Tracking:</strong> Comprehensive parameter usage detection including direct worksheet usage and calculation references</li>
-                <li><strong>💾 Excel Export:</strong> Export calculated fields with formulas and dependencies to Excel for documentation</li>
-                <li><strong>🔧 Advanced Filtering:</strong> Filter by data source, used/unused status, field type, and impact level</li>
-                <li><strong>📋 Formula Conversion:</strong> Automatically converts internal IDs to readable field names/captions in all calculations</li>
-                <li><strong>🔒 100% Client-Side:</strong> All processing happens in your browser—your data never leaves your machine</li>
-              </ul>
-            </div>
-
-            <!-- Common Use Cases -->
-            <div class="about-section-card">
-              <h3 class="section-title">💡 Common Use Cases</h3>
-              <ul class="use-cases-list">
-                <li><strong>Workbook Optimization:</strong> Identify and remove unused fields, calculated fields, and parameters to improve performance and reduce file size</li>
-                <li><strong>Impact Analysis:</strong> Understand which calculated fields depend on a base field before making modifications—see the full dependency chain</li>
-                <li><strong>Field Cleanup:</strong> Find unused parameters and fields that can be safely removed without affecting any worksheets or calculations</li>
-                <li><strong>Formula Auditing:</strong> Review all calculated field formulas with readable field names instead of cryptic internal IDs</li>
-                <li><strong>Dependency Mapping:</strong> Visualize which calculated fields are independent vs dependent, and understand their relationships</li>
-                <li><strong>Documentation:</strong> Generate comprehensive Excel reports of all data sources, fields, calculations, and dependencies for project documentation</li>
-                <li><strong>Code Review:</strong> Review calculated field logic and identify overly complex calculations that need refactoring</li>
-                <li><strong>Knowledge Transfer:</strong> Help new team members understand existing workbook structure, dependencies, and field usage patterns</li>
-                <li><strong>Migration Planning:</strong> Analyze workbook complexity and field relationships before migrating to new versions or environments</li>
-                <li><strong>Performance Troubleshooting:</strong> Identify complex nested calculations and understand which fields are heavily used across multiple worksheets</li>
-                <li><strong>Best Practices Compliance:</strong> Ensure workbooks follow organizational standards for naming conventions, field usage, and calculation structure</li>
-                <li><strong>Workbook Health Check:</strong> Get instant statistics on total fields, unused percentages, and parameter usage to assess workbook health</li>
-              </ul>
-            </div>
-
-            <!-- Security and Privacy -->
-            <div class="about-section-card security-card">
-              <h3 class="section-title">🔒 Security and Privacy</h3>
-              <p class="section-text">
-                Your data security is our top priority. Tableau DeepDive operates entirely within your web browser using 
-                client-side JavaScript. When you upload a Tableau workbook (.twb or .twbx file):
-              </p>
-              <ul class="security-list">
-                <li>✅ <strong>No Server Upload:</strong> Files are never uploaded to any server or cloud service</li>
-                <li>✅ <strong>Local Processing:</strong> All analysis is performed locally in your browser</li>
-                <li>✅ <strong>No Data Storage:</strong> No workbook data is stored, cached, or transmitted</li>
-                <li>✅ <strong>No External Calls:</strong> No data is sent to external services or third parties</li>
-                <li>✅ <strong>Open Source:</strong> Code is transparent and can be reviewed for security compliance</li>
-              </ul>
-              <p class="section-text">
-                <em>You maintain complete control over your workbook files at all times.</em>
-              </p>
-            </div>
-
-            <!-- Developer Information -->
-            <div class="about-section-card developer-card">
-              <h3 class="section-title">👨‍💻 Developer Information</h3>
-              <div class="developer-info-grid">
-                <div class="developer-avatar">
-                  <img src="logos/devp.jpg" alt="Ravindra Punekar" class="developer-photo">
+              <h3 class="about-section-title">✨ Key Features</h3>
+              <div class="about-features-grid">
+                <div class="about-feature-item">
+                  <span class="about-feature-icon">📊</span>
+                  <div>
+                    <strong>Workbook Statistics</strong>
+                    <p>Field counts, unused %, alias coverage, and parameter stats at a glance.</p>
+                  </div>
                 </div>
-                
-                <div class="developer-details-column">
-                  <h4 class="developer-name">Ravindra Punekar</h4>
-                  <p class="developer-bio">"Curious to learn, Hungry to Build."</p>
-                  
-                  <div class="developer-info-items">
-                    <div class="info-item">
-                      <span class="info-icon">🎓</span>
-                      <div>
-                        <strong>Education:</strong> B.Tech
-                      </div>
-                    </div>
-                    
-                    <div class="info-item">
-                      <span class="info-icon">💼</span>
-                      <div>
-                        <strong>Position:</strong> Data Engineer
-                      </div>
-                    </div>
-
-                    <div class="info-item">
-                      <span class="info-icon">🚀</span>
-                      <div>
-                        <strong>Passion:</strong> Building tools that simplify complex data workflows and empower analysts
-                      </div>
-                    </div>
+                <div class="about-feature-item">
+                  <span class="about-feature-icon">📋</span>
+                  <div>
+                    <strong>Workbook Overview</strong>
+                    <p>All worksheets and dashboards in one centralized view.</p>
+                  </div>
+                </div>
+                <div class="about-feature-item">
+                  <span class="about-feature-icon">🗂️</span>
+                  <div>
+                    <strong>Data Source Mapping</strong>
+                    <p>Visualise which worksheets and dashboards connect to each data source.</p>
+                  </div>
+                </div>
+                <div class="about-feature-item">
+                  <span class="about-feature-icon">🔍</span>
+                  <div>
+                    <strong>Field Usage Tracker</strong>
+                    <p>Discover where each field is used across worksheets with detailed tracking.</p>
+                  </div>
+                </div>
+                <div class="about-feature-item">
+                  <span class="about-feature-icon">📝</span>
+                  <div>
+                    <strong>All Fields Inventory</strong>
+                    <p>Browse all original and calculated fields with used/unused status indicators.</p>
+                  </div>
+                </div>
+                <div class="about-feature-item">
+                  <span class="about-feature-icon">🧮</span>
+                  <div>
+                    <strong>Calculation Formulas</strong>
+                    <p>View formulas with readable field names - not cryptic internal IDs - plus copy-to-clipboard.</p>
+                  </div>
+                </div>
+                <div class="about-feature-item">
+                  <span class="about-feature-icon">🔗</span>
+                  <div>
+                    <strong>Field Dependencies</strong>
+                    <p>Understand independent vs dependent calculations and their relationships.</p>
+                  </div>
+                </div>
+                <div class="about-feature-item">
+                  <span class="about-feature-icon">💡</span>
+                  <div>
+                    <strong>Impact Analysis</strong>
+                    <p>See the full dependency chain for every field before making changes.</p>
+                  </div>
+                </div>
+                <div class="about-feature-item">
+                  <span class="about-feature-icon">🏷️</span>
+                  <div>
+                    <strong>Field Aliases</strong>
+                    <p>Map original datasource names to custom aliases/captions with filtering.</p>
+                  </div>
+                </div>
+                <div class="about-feature-item">
+                  <span class="about-feature-icon">⚠️</span>
+                  <div>
+                    <strong>Unused Field Detection</strong>
+                    <p>Identify fields, calculations, and parameters that can be safely removed.</p>
+                  </div>
+                </div>
+                <div class="about-feature-item">
+                  <span class="about-feature-icon">🎯</span>
+                  <div>
+                    <strong>Parameter Tracking</strong>
+                    <p>Detect unused parameters and see every calculation that references them.</p>
+                  </div>
+                </div>
+                <div class="about-feature-item">
+                  <span class="about-feature-icon">📥</span>
+                  <div>
+                    <strong>Export All Data</strong>
+                    <p>One-click multi-sheet Excel export covering every analysis tab.</p>
                   </div>
                 </div>
               </div>
-              
-              <div class="coming-soon">
-                <p class="coming-soon-text">
-                  <span class="coming-soon-badge">🚀 Coming Soon</span>
-                  More features are on the way! Stay tuned for updates.
-                </p>
+            </div>
+
+            <!-- Use Cases -->
+            <div class="about-section-card">
+              <h3 class="about-section-title">💡 Common Use Cases</h3>
+              <div class="about-use-cases-grid">
+                <div class="about-use-case-item">
+                  <strong>🔧 Workbook Optimization</strong>
+                  <p>Remove unused fields, calculations, and parameters to boost performance and shrink file size.</p>
+                </div>
+                <div class="about-use-case-item">
+                  <strong>💥 Impact Analysis</strong>
+                  <p>Know what breaks before you change anything - see the full dependency chain upfront.</p>
+                </div>
+                <div class="about-use-case-item">
+                  <strong>🔎 Formula Auditing</strong>
+                  <p>Review calculated field logic with readable names, not cryptic internal IDs.</p>
+                </div>
+                <div class="about-use-case-item">
+                  <strong>📚 Documentation</strong>
+                  <p>Generate Excel reports of all data sources, fields, calculations, and dependencies.</p>
+                </div>
+                <div class="about-use-case-item">
+                  <strong>🤝 Knowledge Transfer</strong>
+                  <p>Help new team members understand workbook structure, dependencies, and field usage.</p>
+                </div>
+                <div class="about-use-case-item">
+                  <strong>🚀 Migration Planning</strong>
+                  <p>Analyse workbook complexity and field relationships before migrating environments.</p>
+                </div>
+                <div class="about-use-case-item">
+                  <strong>🏥 Workbook Health Check</strong>
+                  <p>Instant stats on total fields, unused percentages, and parameter health.</p>
+                </div>
+                <div class="about-use-case-item">
+                  <strong>✅ Best Practices Compliance</strong>
+                  <p>Ensure naming conventions, field usage, and calculation structure meet org standards.</p>
+                </div>
               </div>
             </div>
+
+            <!-- Security -->
+            <div class="about-section-card about-security-card">
+              <h3 class="about-section-title">🔒 Security &amp; Privacy</h3>
+              <p class="section-text">Tableau DeepDive operates entirely in your browser. When you open a <code>.twb</code> or <code>.twbx</code> file:</p>
+              <div class="about-security-grid">
+                <div class="about-security-item">
+                  <span class="security-check">✅</span>
+                  <div><strong>No Server Upload</strong><p>Files are never sent to any server or cloud service.</p></div>
+                </div>
+                <div class="about-security-item">
+                  <span class="security-check">✅</span>
+                  <div><strong>Local Processing Only</strong><p>All analysis runs locally in your browser tab.</p></div>
+                </div>
+                <div class="about-security-item">
+                  <span class="security-check">✅</span>
+                  <div><strong>No Data Storage</strong><p>Nothing is stored, cached, or transmitted anywhere.</p></div>
+                </div>
+                <div class="about-security-item">
+                  <span class="security-check">✅</span>
+                  <div><strong>No External Calls</strong><p>Zero data sent to external services or third parties.</p></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Developer -->
+            <div class="about-section-card about-developer-card-new">
+              <h3 class="about-section-title">👨‍💻 Developer</h3>
+              <div class="about-dev-inner">
+                <div class="about-dev-left">
+                  <div class="developer-avatar">
+                    <img src="logos/devp.jpg" alt="Ravindra Punekar" class="developer-photo">
+                  </div>
+                </div>
+                <div class="about-dev-right">
+                  <h4 class="developer-name">Ravindra Punekar</h4>
+                  <p class="developer-bio">"Curious to learn, Hungry to Build."</p>
+                  <div class="about-dev-chips">
+                    <span class="about-dev-chip">🎓 B.Tech</span>
+                    <span class="about-dev-chip">💼 Data Engineer</span>
+                    <span class="about-dev-chip">🚀 Tool Builder</span>
+                  </div>
+                  <p class="section-text" style="margin-top: var(--spacing-sm); margin-bottom:0;">
+                    Passionate about building tools that simplify complex data workflows and empower analysts to do their best work.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="coming-soon">
+              <p class="coming-soon-text">
+                <span class="coming-soon-badge">🚀 Coming Soon</span>
+                More features are on the way! Stay tuned for updates.
+              </p>
+            </div>
+
           </div>
         </div>
       </div>
@@ -1154,39 +1282,49 @@ Tab 7: Fields and Dependencies
       <div v-if="showWelcomePopup" class="modal-overlay welcome-overlay" @click="showWelcomePopup = false" v-cloak>
         <div class="modal-content welcome-popup" @click.stop>
           <button class="modal-close" @click="showWelcomePopup = false" title="Close">✕</button>
-          
+
           <div class="welcome-header">
             <div class="welcome-icon">🎉</div>
-            <h2 class="welcome-title">New Feature: Field Aliases!</h2>
+            <span class="welcome-version-badge">v2.1 - What's New</span>
+            <h2 class="welcome-title">New Features Available!</h2>
+            <p class="welcome-subtitle">Here's everything we've added in this release.</p>
           </div>
-          
-          <div class="welcome-content">
-            <p class="welcome-intro">
-              We've added a new feature to help you understand field naming in your workbooks!
-            </p>
-            
-            <div class="feature-highlight">
-              <div class="feature-icon">🏷️</div>
-              <div class="feature-details">
-                <h3 class="feature-title">Field Aliases / Captions</h3>
-                <p class="feature-description">
-                  View complete mapping between original datasource field names and their custom aliases or captions. 
-                  Quickly identify which fields have been renamed and understand your naming conventions at a glance.
-                </p>
+
+          <div class="welcome-body">
+            <div class="welcome-features-grid">
+
+              <div class="feature-card">
+                <div class="feature-card-icon">🏷️</div>
+                <div class="feature-card-content">
+                  <h3 class="feature-card-title">Field Aliases / Captions</h3>
+                  <p class="feature-card-desc">Map original datasource field names to their custom aliases. Spot renamed fields at a glance.</p>
+                </div>
+                <span class="feature-card-badge new">New</span>
               </div>
+
+              <div class="feature-card">
+                <div class="feature-card-icon">📊</div>
+                <div class="feature-card-content">
+                  <h3 class="feature-card-title">Export All Data</h3>
+                  <p class="feature-card-desc">One-click full analysis export as a multi-sheet Excel file covering every tab.</p>
+                </div>
+                <span class="feature-card-badge new">New</span>
+              </div>
+
+              <div class="feature-card">
+                <div class="feature-card-icon">⚙️</div>
+                <div class="feature-card-content">
+                  <h3 class="feature-card-title">Parameter Tracking</h3>
+                  <p class="feature-card-desc">Detect unused parameters and see where each parameter is referenced across calculations.</p>
+                </div>
+                <span class="feature-card-badge improved">Improved</span>
+              </div>
+
             </div>
-            
-            <!-- <div class="feature-benefits">
-              <h4 class="benefits-title">What you can do:</h4>
-              <ul class="benefits-list">
-                <li>✅ See all fields with their original → alias mappings</li>
-                <li>✅ Filter by datasource, field name, or alias status</li>
-                <li>✅ Identify fields that still use original names</li>
-                <li>✅ Visual indicators for fields with/without aliases</li>
-                <li>✅ Track alias coverage percentage in statistics</li>
-              </ul>
-            </div> -->
-            
+          </div>
+
+          <div class="welcome-footer">
+            <button class="btn btn-primary btn-welcome-cta" @click="showWelcomePopup = false">Get Started 🚀</button>
           </div>
         </div>
       </div>
